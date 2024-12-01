@@ -1,0 +1,8 @@
+[package]
+name = "aspecky/viewportfitter"
+version = "1.0.0"
+registry = "https://github.com/UpliftGames/wally-index"
+realm = "shared"
+description = "An implementation of EgoMoose's ViewportModel.lua, will maybe add objects to cache computations for minimum viewport fit"
+
+[dependencies]
