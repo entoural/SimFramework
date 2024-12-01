@@ -109,6 +109,12 @@ if not RunService:IsRunning() then
 		PlayerStateUpdate = table.freeze({
 			SetCallback = noop
 		}),
+		UpdatePlayerPasses = table.freeze({
+			On = noop
+		}),
+		PlayerLeft = table.freeze({
+			On = noop
+		}),
 		RequestData = table.freeze({
 			Fire = noop
 		}),
@@ -143,9 +149,13 @@ end
 
 RunService.Heartbeat:Connect(SendEvents)
 
-local events = table.create(3)
-local event_queue: { [number]: { any } } = table.create(3)
+local events = table.create(5)
+local event_queue: { [number]: { any } } = table.create(5)
 event_queue[1] = {}
+events[2] = {}
+event_queue[2] = {}
+events[3] = {}
+event_queue[3] = {}
 reliable.OnClientEvent:Connect(function(buff, inst)
 	incoming_buff = buff
 	incoming_inst = inst
@@ -157,12 +167,10 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 		if id == 1 then
 			local value
 			value = {}
-			incoming_ipos = incoming_ipos + 1
-			value.Player = incoming_inst[incoming_ipos]
-			assert(value.Player ~= nil)
-			assert(value.Player:IsA("Player"))
 			local len_1 = buffer.readu16(incoming_buff, read(2))
-			value.Index = buffer.readstring(incoming_buff, read(len_1), len_1)
+			value.Player = buffer.readstring(incoming_buff, read(len_1), len_1)
+			local len_2 = buffer.readu16(incoming_buff, read(2))
+			value.Index = buffer.readstring(incoming_buff, read(len_2), len_2)
 			value.Value = {}
 			local enum_value_1 = buffer.readu8(incoming_buff, read(1))
 			if enum_value_1 == 0 then
@@ -179,6 +187,53 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 					warn(`[ZAP] {#event_queue[1]} events in queue for PlayerStateUpdate. Did you forget to attach a listener?`)
 				end
 			end
+		elseif id == 2 then
+			local value
+			value = {}
+			local len_1 = buffer.readu16(incoming_buff, read(2))
+			for i_1 = 1, len_1 do
+				local val_1
+				val_1 = {}
+				val_1.Payload = {}
+				local len_2 = buffer.readu16(incoming_buff, read(2))
+				for i_2 = 1, len_2 do
+					local val_2
+					val_2 = {}
+					local len_3 = buffer.readu16(incoming_buff, read(2))
+					val_2.Player = buffer.readstring(incoming_buff, read(len_3), len_3)
+					val_2.Data = {}
+					local len_4 = buffer.readu16(incoming_buff, read(2))
+					val_2.Data.Name = buffer.readstring(incoming_buff, read(len_4), len_4)
+					val_2.Data.Owned = buffer.readu8(incoming_buff, read(1)) == 1
+					val_2.Data.Gifted = buffer.readu8(incoming_buff, read(1)) == 1
+					val_1.Payload[i_2] = val_2
+				end
+				value[i_1] = val_1
+			end
+			if events[2][1] then
+				for _, cb in events[2] do
+					task.spawn(cb, value)
+				end
+			else
+				table.insert(event_queue[2], value)
+				if #event_queue[2] > 64 then
+					warn(`[ZAP] {#event_queue[2]} events in queue for UpdatePlayerPasses. Did you forget to attach a listener?`)
+				end
+			end
+		elseif id == 3 then
+			local value
+			local len_1 = buffer.readu16(incoming_buff, read(2))
+			value = buffer.readstring(incoming_buff, read(len_1), len_1)
+			if events[3][1] then
+				for _, cb in events[3] do
+					task.spawn(cb, value)
+				end
+			else
+				table.insert(event_queue[3], value)
+				if #event_queue[3] > 64 then
+					warn(`[ZAP] {#event_queue[3]} events in queue for PlayerLeft. Did you forget to attach a listener?`)
+				end
+			end
 		else
 			error("Unknown event id")
 		end
@@ -189,18 +244,18 @@ local returns = table.freeze({
 	RequestData = table.freeze({
 		Fire = function()
 			alloc(1)
-			buffer.writeu8(outgoing_buff, outgoing_apos, 2)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 4)
 		end,
 	}),
 	RequestReplication = table.freeze({
 		Fire = function()
 			alloc(1)
-			buffer.writeu8(outgoing_buff, outgoing_apos, 3)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 5)
 		end,
 	}),
 	PlayerStateUpdate = table.freeze({
 		SetCallback = function(Callback: (({
-			Player: (Player),
+			Player: (string),
 			Index: (string),
 			Value: ({
 				Type: "Cash",
@@ -214,6 +269,39 @@ local returns = table.freeze({
 			event_queue[1] = {}
 			return function()
 				events[1] = nil
+			end
+		end,
+	}),
+	UpdatePlayerPasses = table.freeze({
+		On = function(Callback: (({ ({
+			Payload: ({ ({
+				Player: (string),
+				Data: ({
+					Name: (string),
+					Owned: (boolean),
+					Gifted: (boolean),
+				}),
+			}) }),
+		}) })) -> ())
+			table.insert(events[2], Callback)
+			for _, value in event_queue[2] do
+				task.spawn(Callback, value)
+			end
+			event_queue[2] = {}
+			return function()
+				table.remove(events[2], table.find(events[2], Callback))
+			end
+		end,
+	}),
+	PlayerLeft = table.freeze({
+		On = function(Callback: ((string)) -> ())
+			table.insert(events[3], Callback)
+			for _, value in event_queue[3] do
+				task.spawn(Callback, value)
+			end
+			event_queue[3] = {}
+			return function()
+				table.remove(events[3], table.find(events[3], Callback))
 			end
 		end,
 	}),

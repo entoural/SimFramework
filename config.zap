@@ -6,12 +6,35 @@ event PlayerStateUpdate = {
 	type: Reliable,
 	call: SingleAsync,
     data: struct {
-        Player: Instance (Player),
+        Player: string,
         Index: string,
         Value: enum "Type" {
             Cash {value: u32}
         }
     }
+}
+
+event UpdatePlayerPasses = {
+    from: Server,
+	type: Reliable,
+	call: ManyAsync,
+    data: struct {
+        Payload: struct {
+            Player: string,
+            Data: struct {
+                Name: string,
+                Owned: boolean,
+                Gifted: boolean
+            }
+        }[]
+    }[]
+}
+
+event PlayerLeft = {
+    from: Server,
+	type: Reliable,
+	call: ManyAsync,
+    data: string
 }
 
 event RequestData = {

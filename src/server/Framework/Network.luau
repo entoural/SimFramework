@@ -113,6 +113,20 @@ if not RunService:IsRunning() then
 			FireList = noop,
 			FireSet = noop
 		}),
+		UpdatePlayerPasses = table.freeze({
+			Fire = noop,
+			FireAll = noop,
+			FireExcept = noop,
+			FireList = noop,
+			FireSet = noop
+		}),
+		PlayerLeft = table.freeze({
+			Fire = noop,
+			FireAll = noop,
+			FireExcept = noop,
+			FireList = noop,
+			FireSet = noop
+		}),
 		RequestData = table.freeze({
 			SetCallback = noop
 		}),
@@ -171,7 +185,7 @@ end
 
 RunService.Heartbeat:Connect(SendEvents)
 
-local events = table.create(3)
+local events = table.create(5)
 reliable.OnServerEvent:Connect(function(player, buff, inst)
 	incoming_buff = buff
 	incoming_inst = inst
@@ -180,15 +194,15 @@ reliable.OnServerEvent:Connect(function(player, buff, inst)
 	local len = buffer.len(buff)
 	while incoming_read < len do
 		local id = buffer.readu8(buff, read(1))
-		if id == 2 then
+		if id == 4 then
 			local value
-			if events[2] then
-				task.spawn(events[2], player, value)
+			if events[4] then
+				task.spawn(events[4], player, value)
 			end
-		elseif id == 3 then
+		elseif id == 5 then
 			local value
-			if events[3] then
-				task.spawn(events[3], player, value)
+			if events[5] then
+				task.spawn(events[5], player, value)
 			end
 		else
 			error("Unknown event id")
@@ -199,7 +213,7 @@ local returns = table.freeze({
 	SendEvents = SendEvents,
 	PlayerStateUpdate = table.freeze({
 		Fire = function(Player: Player, Value: ({
-			Player: (Player),
+			Player: (string),
 			Index: (string),
 			Value: ({
 				Type: "Cash",
@@ -209,13 +223,16 @@ local returns = table.freeze({
 			load_player(Player)
 			alloc(1)
 			buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-			assert(Value.Player:IsA("Player"))
-			table.insert(outgoing_inst, Value.Player)
-			local len_1 = #Value.Index
+			local len_1 = #Value.Player
 			alloc(2)
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
 			alloc(len_1)
-			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			local len_2 = #Value.Index
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
+			alloc(len_2)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
 			if Value.Value.Type == "Cash" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
@@ -227,7 +244,7 @@ local returns = table.freeze({
 			player_map[Player] = save()
 		end,
 		FireAll = function(Value: ({
-			Player: (Player),
+			Player: (string),
 			Index: (string),
 			Value: ({
 				Type: "Cash",
@@ -237,13 +254,16 @@ local returns = table.freeze({
 			load_empty()
 			alloc(1)
 			buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-			assert(Value.Player:IsA("Player"))
-			table.insert(outgoing_inst, Value.Player)
-			local len_1 = #Value.Index
+			local len_1 = #Value.Player
 			alloc(2)
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
 			alloc(len_1)
-			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			local len_2 = #Value.Index
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
+			alloc(len_2)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
 			if Value.Value.Type == "Cash" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
@@ -262,7 +282,7 @@ local returns = table.freeze({
 			end
 		end,
 		FireExcept = function(Except: Player, Value: ({
-			Player: (Player),
+			Player: (string),
 			Index: (string),
 			Value: ({
 				Type: "Cash",
@@ -272,13 +292,16 @@ local returns = table.freeze({
 			load_empty()
 			alloc(1)
 			buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-			assert(Value.Player:IsA("Player"))
-			table.insert(outgoing_inst, Value.Player)
-			local len_1 = #Value.Index
+			local len_1 = #Value.Player
 			alloc(2)
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
 			alloc(len_1)
-			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			local len_2 = #Value.Index
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
+			alloc(len_2)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
 			if Value.Value.Type == "Cash" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
@@ -299,7 +322,7 @@ local returns = table.freeze({
 			end
 		end,
 		FireList = function(List: { Player }, Value: ({
-			Player: (Player),
+			Player: (string),
 			Index: (string),
 			Value: ({
 				Type: "Cash",
@@ -309,13 +332,16 @@ local returns = table.freeze({
 			load_empty()
 			alloc(1)
 			buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-			assert(Value.Player:IsA("Player"))
-			table.insert(outgoing_inst, Value.Player)
-			local len_1 = #Value.Index
+			local len_1 = #Value.Player
 			alloc(2)
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
 			alloc(len_1)
-			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			local len_2 = #Value.Index
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
+			alloc(len_2)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
 			if Value.Value.Type == "Cash" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
@@ -334,7 +360,7 @@ local returns = table.freeze({
 			end
 		end,
 		FireSet = function(Set: { [Player]: true }, Value: ({
-			Player: (Player),
+			Player: (string),
 			Index: (string),
 			Value: ({
 				Type: "Cash",
@@ -344,13 +370,16 @@ local returns = table.freeze({
 			load_empty()
 			alloc(1)
 			buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-			assert(Value.Player:IsA("Player"))
-			table.insert(outgoing_inst, Value.Player)
-			local len_1 = #Value.Index
+			local len_1 = #Value.Player
 			alloc(2)
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
 			alloc(len_1)
-			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			local len_2 = #Value.Index
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
+			alloc(len_2)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
 			if Value.Value.Type == "Cash" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
@@ -369,19 +398,343 @@ local returns = table.freeze({
 			end
 		end,
 	}),
+	UpdatePlayerPasses = table.freeze({
+		Fire = function(Player: Player, Value: ({ ({
+			Payload: ({ ({
+				Player: (string),
+				Data: ({
+					Name: (string),
+					Owned: (boolean),
+					Gifted: (boolean),
+				}),
+			}) }),
+		}) }))
+			load_player(Player)
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 2)
+			local len_1 = #Value
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			for i_1 = 1, len_1 do
+				local val_1 = Value[i_1]
+				local len_2 = #val_1.Payload
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
+				for i_2 = 1, len_2 do
+					local val_2 = val_1.Payload[i_2]
+					local len_3 = #val_2.Player
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+					alloc(len_3)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Player, len_3)
+					local len_4 = #val_2.Data.Name
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
+					alloc(len_4)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Data.Name, len_4)
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Owned and 1 or 0)
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Gifted and 1 or 0)
+				end
+			end
+			player_map[Player] = save()
+		end,
+		FireAll = function(Value: ({ ({
+			Payload: ({ ({
+				Player: (string),
+				Data: ({
+					Name: (string),
+					Owned: (boolean),
+					Gifted: (boolean),
+				}),
+			}) }),
+		}) }))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 2)
+			local len_1 = #Value
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			for i_1 = 1, len_1 do
+				local val_1 = Value[i_1]
+				local len_2 = #val_1.Payload
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
+				for i_2 = 1, len_2 do
+					local val_2 = val_1.Payload[i_2]
+					local len_3 = #val_2.Player
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+					alloc(len_3)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Player, len_3)
+					local len_4 = #val_2.Data.Name
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
+					alloc(len_4)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Data.Name, len_4)
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Owned and 1 or 0)
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Gifted and 1 or 0)
+				end
+			end
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in Players:GetPlayers() do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
+			end
+		end,
+		FireExcept = function(Except: Player, Value: ({ ({
+			Payload: ({ ({
+				Player: (string),
+				Data: ({
+					Name: (string),
+					Owned: (boolean),
+					Gifted: (boolean),
+				}),
+			}) }),
+		}) }))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 2)
+			local len_1 = #Value
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			for i_1 = 1, len_1 do
+				local val_1 = Value[i_1]
+				local len_2 = #val_1.Payload
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
+				for i_2 = 1, len_2 do
+					local val_2 = val_1.Payload[i_2]
+					local len_3 = #val_2.Player
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+					alloc(len_3)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Player, len_3)
+					local len_4 = #val_2.Data.Name
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
+					alloc(len_4)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Data.Name, len_4)
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Owned and 1 or 0)
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Gifted and 1 or 0)
+				end
+			end
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in Players:GetPlayers() do
+				if player ~= Except then
+					load_player(player)
+					alloc(used)
+					buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+					table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+					player_map[player] = save()
+				end
+			end
+		end,
+		FireList = function(List: { Player }, Value: ({ ({
+			Payload: ({ ({
+				Player: (string),
+				Data: ({
+					Name: (string),
+					Owned: (boolean),
+					Gifted: (boolean),
+				}),
+			}) }),
+		}) }))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 2)
+			local len_1 = #Value
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			for i_1 = 1, len_1 do
+				local val_1 = Value[i_1]
+				local len_2 = #val_1.Payload
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
+				for i_2 = 1, len_2 do
+					local val_2 = val_1.Payload[i_2]
+					local len_3 = #val_2.Player
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+					alloc(len_3)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Player, len_3)
+					local len_4 = #val_2.Data.Name
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
+					alloc(len_4)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Data.Name, len_4)
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Owned and 1 or 0)
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Gifted and 1 or 0)
+				end
+			end
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in List do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
+			end
+		end,
+		FireSet = function(Set: { [Player]: true }, Value: ({ ({
+			Payload: ({ ({
+				Player: (string),
+				Data: ({
+					Name: (string),
+					Owned: (boolean),
+					Gifted: (boolean),
+				}),
+			}) }),
+		}) }))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 2)
+			local len_1 = #Value
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			for i_1 = 1, len_1 do
+				local val_1 = Value[i_1]
+				local len_2 = #val_1.Payload
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
+				for i_2 = 1, len_2 do
+					local val_2 = val_1.Payload[i_2]
+					local len_3 = #val_2.Player
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+					alloc(len_3)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Player, len_3)
+					local len_4 = #val_2.Data.Name
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
+					alloc(len_4)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Data.Name, len_4)
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Owned and 1 or 0)
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Gifted and 1 or 0)
+				end
+			end
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for player in Set do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
+			end
+		end,
+	}),
+	PlayerLeft = table.freeze({
+		Fire = function(Player: Player, Value: (string))
+			load_player(Player)
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 3)
+			local len_1 = #Value
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			alloc(len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value, len_1)
+			player_map[Player] = save()
+		end,
+		FireAll = function(Value: (string))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 3)
+			local len_1 = #Value
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			alloc(len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value, len_1)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in Players:GetPlayers() do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
+			end
+		end,
+		FireExcept = function(Except: Player, Value: (string))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 3)
+			local len_1 = #Value
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			alloc(len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value, len_1)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in Players:GetPlayers() do
+				if player ~= Except then
+					load_player(player)
+					alloc(used)
+					buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+					table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+					player_map[player] = save()
+				end
+			end
+		end,
+		FireList = function(List: { Player }, Value: (string))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 3)
+			local len_1 = #Value
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			alloc(len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value, len_1)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in List do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
+			end
+		end,
+		FireSet = function(Set: { [Player]: true }, Value: (string))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 3)
+			local len_1 = #Value
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			alloc(len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value, len_1)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for player in Set do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
+			end
+		end,
+	}),
 	RequestData = table.freeze({
 		SetCallback = function(Callback: (Player) -> ()): () -> ()
-			events[2] = Callback
+			events[4] = Callback
 			return function()
-				events[2] = nil
+				events[4] = nil
 			end
 		end,
 	}),
 	RequestReplication = table.freeze({
 		SetCallback = function(Callback: (Player) -> ()): () -> ()
-			events[3] = Callback
+			events[5] = Callback
 			return function()
-				events[3] = nil
+				events[5] = nil
 			end
 		end,
 	}),

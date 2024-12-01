@@ -14,12 +14,12 @@ Replication.ReplicatorStates = {}
 
 function Replication:Replicator(Player: Player, State: () -> any, StateName: string, IsGlobal: boolean?)
     SharedUtility.RootedEffect(function()
-        local Payload = {Value = {Value = State(), Type = StateName}, Player = Player, Index = StateName}
+        local Payload = {Value = {Value = State(), Type = StateName}, Player = Player.Name, Index = StateName}
 
         if IsGlobal then
             ReplicationUpdate.FireAll(Payload)
         else
-            ReplicationUpdate.Fire(Player, Payload)
+            ReplicationUpdate.Fire(Player.Name, Payload)
         end
     end)
 end
@@ -32,7 +32,7 @@ function Replication:ReplicateState(Index: string, IsGlobal: boolean?)
             self:Replicator(Player.Player, Player[Index], Index, IsGlobal)
 
             if IsGlobal then
-                table.insert(self.ReplicatorStates, {State = Player[Index], Index = Index, Player = Player.Player})
+                table.insert(self.ReplicatorStates, {State = Player[Index], Index = Index, Player = Player.Name})
             end
         end
     end
@@ -55,14 +55,14 @@ function Replication:ReplicatePlayer(PlayerInstance: Player)
             self:Replicator(PlayerInstance, Player[Index], Global)
 
             if Global then
-                table.insert(self.ReplicatorStates, {State = Player[Index], Index = Index, Player = PlayerInstance})
+                table.insert(self.ReplicatorStates, {State = Player[Index], Index = Index, Player = PlayerInstance.Name})
             end
         end
     end
 
     for _, State in self.ReplicatorStates do
         if State.Player then
-            ReplicationUpdate.FireAll({Value = {Value = State.State(), Type = State.Index}, Player = State.Player, Index = State.Index})
+            ReplicationUpdate.FireAll({Value = {Value = State.State(), Type = State.Index}, Player = State.Player.Name, Index = State.Index})
         else
             table.remove(self.ReplicatorStates, table.find(self.ReplicatorStates, State))
         end
