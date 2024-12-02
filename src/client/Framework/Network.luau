@@ -175,7 +175,10 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 			local enum_value_1 = buffer.readu8(incoming_buff, read(1))
 			if enum_value_1 == 0 then
 				value.Value.Type = "Cash"
-				value.Value.value = buffer.readu32(incoming_buff, read(4))
+				value.Value.Value = buffer.readu32(incoming_buff, read(4))
+			elseif enum_value_1 == 1 then
+				value.Value.Type = "Deployed"
+				value.Value.Value = buffer.readu8(incoming_buff, read(1)) == 1
 			else
 				error("Invalid variant")
 			end
@@ -259,7 +262,10 @@ local returns = table.freeze({
 			Index: (string),
 			Value: ({
 				Type: "Cash",
-				value: (number),
+				Value: (number),
+			} | {
+				Type: "Deployed",
+				Value: (boolean),
 			}),
 		})) -> ()): () -> ()
 			events[1] = Callback

@@ -217,7 +217,10 @@ local returns = table.freeze({
 			Index: (string),
 			Value: ({
 				Type: "Cash",
-				value: (number),
+				Value: (number),
+			} | {
+				Type: "Deployed",
+				Value: (boolean),
 			}),
 		}))
 			load_player(Player)
@@ -237,7 +240,12 @@ local returns = table.freeze({
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
-				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.value)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Deployed" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
 				error("Invalid variant")
 			end
@@ -248,7 +256,10 @@ local returns = table.freeze({
 			Index: (string),
 			Value: ({
 				Type: "Cash",
-				value: (number),
+				Value: (number),
+			} | {
+				Type: "Deployed",
+				Value: (boolean),
 			}),
 		}))
 			load_empty()
@@ -268,7 +279,12 @@ local returns = table.freeze({
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
-				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.value)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Deployed" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
 				error("Invalid variant")
 			end
@@ -286,7 +302,10 @@ local returns = table.freeze({
 			Index: (string),
 			Value: ({
 				Type: "Cash",
-				value: (number),
+				Value: (number),
+			} | {
+				Type: "Deployed",
+				Value: (boolean),
 			}),
 		}))
 			load_empty()
@@ -306,7 +325,12 @@ local returns = table.freeze({
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
-				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.value)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Deployed" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
 				error("Invalid variant")
 			end
@@ -326,7 +350,10 @@ local returns = table.freeze({
 			Index: (string),
 			Value: ({
 				Type: "Cash",
-				value: (number),
+				Value: (number),
+			} | {
+				Type: "Deployed",
+				Value: (boolean),
 			}),
 		}))
 			load_empty()
@@ -346,7 +373,12 @@ local returns = table.freeze({
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
-				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.value)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Deployed" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
 				error("Invalid variant")
 			end
@@ -364,7 +396,10 @@ local returns = table.freeze({
 			Index: (string),
 			Value: ({
 				Type: "Cash",
-				value: (number),
+				Value: (number),
+			} | {
+				Type: "Deployed",
+				Value: (boolean),
 			}),
 		}))
 			load_empty()
@@ -384,7 +419,12 @@ local returns = table.freeze({
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
-				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.value)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Deployed" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
 				error("Invalid variant")
 			end

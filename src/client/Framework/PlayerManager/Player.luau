@@ -44,9 +44,9 @@ end
 function PlayerClass:UpdateState(Index: string, Value: any)
     local State = self[Index]
     if State then
-        State(Value)
+        State(Value.Value)
     else
-        self[Index] = Source(Value)
+        self[Index] = Source(Value.Value)
     end
 end
 

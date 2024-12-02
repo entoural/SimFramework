@@ -29,7 +29,6 @@ function module.ColorToShineColors(Color: Color3)
 end
 
 function module.ColorToShineSequence(Colors: {Color3})
-    print(Colors)
     local Keypoints = {
         ColorSequenceKeypoint.new(0, Colors[1]),
         ColorSequenceKeypoint.new(0.2, Colors[1]),

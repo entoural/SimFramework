@@ -9,7 +9,8 @@ event PlayerStateUpdate = {
         Player: string,
         Index: string,
         Value: enum "Type" {
-            Cash {value: u32}
+            Cash {Value: u32},
+            Deployed {Value: boolean}
         }
     }
 }

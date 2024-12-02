@@ -41,7 +41,6 @@ function Manager:AddMethod(Name: string, Method: (Player: PlayerClass.PlayerObje
 end
 
 function Manager:AddPlayer(Player: Player)
-    print("Adding "..Player.Name)
     local NewPlayer = PlayerClass.new(Player, self.DefaultStates, self.LeaderstatLinks, self.Death)
     self.PlayerList[Player] = NewPlayer
 
@@ -52,13 +51,17 @@ function Manager:AddPlayer(Player: Player)
     self.PlayerAdded:Fire(NewPlayer)
 end
 
-function Manager:GetPlayer(Player: Player)
+function Manager:GetPlayer(Player: Player): PlayerClass.PlayerObject
     if not Player or not Player:IsA("Player") or Player.Parent ~= Players then
         return
     end
 
     local Resolved = false
-    local PlayerObject
+    local PlayerObject = self.PlayerList[Player]
+
+    if PlayerObject then
+        return PlayerObject
+    end
 
     local TempJanitor = Janitor.new()
     TempJanitor:Add(self.PlayerAdded:Connect(function(Object: PlayerClass.PlayerObject)
@@ -66,7 +69,7 @@ function Manager:GetPlayer(Player: Player)
             PlayerObject = Object
             Resolved = true
         end
-    end))
+    end), "Disconnect")
     TempJanitor:Add(task.spawn(function()
         task.wait(5)
         if not Resolved then

@@ -52,7 +52,7 @@ function Replication:ReplicatePlayer(PlayerInstance: Player)
         local Global = State.Global
 
         if Player[Index] then
-            self:Replicator(PlayerInstance, Player[Index], Global)
+            self:Replicator(PlayerInstance, Player[Index], Index, Global)
 
             if Global then
                 table.insert(self.ReplicatorStates, {State = Player[Index], Index = Index, Player = PlayerInstance.Name})
@@ -62,7 +62,7 @@ function Replication:ReplicatePlayer(PlayerInstance: Player)
 
     for _, State in self.ReplicatorStates do
         if State.Player then
-            ReplicationUpdate.FireAll({Value = {Value = State.State(), Type = State.Index}, Player = State.Player.Name, Index = State.Index})
+            ReplicationUpdate.FireAll({Value = {Value = State.State(), Type = State.Index}, Player = State.Player, Index = State.Index})
         else
             table.remove(self.ReplicatorStates, table.find(self.ReplicatorStates, State))
         end

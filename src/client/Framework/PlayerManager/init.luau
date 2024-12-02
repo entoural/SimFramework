@@ -7,6 +7,7 @@ local LocalName = LocalPlayer.Name
 local PlayerClass = require(script.Player)
 local Network = require(script.Parent.Network)
 local StateUpdate = Network.PlayerStateUpdate
+local RequestReplication = Network.RequestReplication
 local PlayerLeft = Network.PlayerLeft
 
 local Vide = require(Packages.Vide)
@@ -39,8 +40,17 @@ function module.SetupPlayer(Player: Player | string): PlayerClass.Player
     return module.Players[Name]
 end
 
+function module.PlayerExists(Player: string)
+    return Players:FindFirstChild(Player)
+end
+
 function module.GetPlayer(Player: Instance | string): PlayerClass.Player
-    local PlayerObject = if typeof(Player) == "string" then module.Players[Player] else module.Players[Player.Name]
+    local IsString = typeof(Player) == "string"
+    local PlayerObject = if IsString then module.Players[Player] else module.Players[Player.Name]
+    if not PlayerObject and IsString and not module.PlayerExists(Player) then
+        error(`[ENT Framework] Could not retrieve Instance for player with name {Player}.`)
+    end
+
     return if not PlayerObject then module:SetupPlayer(Player) else PlayerObject
 end
 
@@ -60,13 +70,14 @@ function module:Begin()
     PlayerLeft.On(function(Player: string)
         local PlayerObject = module.Players[Player]
         if not PlayerObject then return end
-
         PlayerObject:Destroy()
     end)
 
     StateUpdate.SetCallback(function(Payload)
         module.GetPlayer(Payload.Player):UpdateState(Payload.Index, Payload.Value)
     end)
+
+    RequestReplication.Fire()
 end
 
 return module
