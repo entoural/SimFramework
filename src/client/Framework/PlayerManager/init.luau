@@ -13,13 +13,29 @@ local Vide = require(Packages.Vide)
 local Source = Vide.source
 
 local module = {}
-module.Players = {[LocalName] = {}} :: {PlayerClass.Player}
+module.Players = {[LocalName] = PlayerClass.new(LocalName)} :: {PlayerClass.Player}
+
+type Method = <T>(self: PlayerClass.Player, ...any) -> T
+module.Methods = {} :: {[string]: Method}
+
+function module.AddMethod(Index: string, Method: Method)
+    module.Methods[Index] = Method
+
+    for _, PlayerObject in module.Players do
+        PlayerObject[Index] = Method
+    end
+end
 
 function module.SetupPlayer(Player: Player | string)
     local Name = if typeof(Player) == "string" then Player else Player.Name
     if module.Players[Name] then return end
 
-    module.Players[Name] = PlayerClass.new(Player)
+    local PlayerObject = PlayerClass.new(Player)
+    for Index, Method in module.Methods do
+        PlayerObject[Index] = Method
+    end
+    module.Players[Name] = PlayerObject
+
     return module.Players[Name]
 end
 
@@ -46,6 +62,10 @@ function module:Begin()
         if not PlayerObject then return end
 
         PlayerObject:Destroy()
+    end)
+
+    StateUpdate.SetCallback(function(Payload)
+        module.GetPlayer(Payload.Player):UpdateState(Payload.Index, Payload.Value)
     end)
 end
 
