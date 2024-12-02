@@ -26,7 +26,7 @@ function module.AddMethod(Index: string, Method: Method)
     end
 end
 
-function module.SetupPlayer(Player: Player | string)
+function module.SetupPlayer(Player: Player | string): PlayerClass.Player
     local Name = if typeof(Player) == "string" then Player else Player.Name
     if module.Players[Name] then return end
 
@@ -39,7 +39,7 @@ function module.SetupPlayer(Player: Player | string)
     return module.Players[Name]
 end
 
-function module.GetPlayer(Player: Instance | string)
+function module.GetPlayer(Player: Instance | string): PlayerClass.Player
     local PlayerObject = if typeof(Player) == "string" then module.Players[Player] else module.Players[Player.Name]
     return if not PlayerObject then module:SetupPlayer(Player) else PlayerObject
 end
