@@ -172,7 +172,6 @@ local function SendEvents()
 		if outgoing.used > 0 then
 			local buff = buffer.create(outgoing.used)
 			buffer.copy(buff, 0, outgoing.buff, 0, outgoing.used)
-
 			reliable:FireClient(player, buff, outgoing.inst)
 
 			outgoing.buff = buffer.create(64)

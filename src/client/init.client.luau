@@ -19,6 +19,10 @@ Combinations.ShineImageGradient(frame.ImageLabel2, 1, 0)
 Combinations.ContinuousImageShine(frame.ImageLabel)
 frame.TextLabel.Text = RichText.Stroke(RichText.Color("this is some text"))
 
+require(ReplicatedStorage.Shared.Utility).Clock(5, function()
+    Animations.GeneralEffects.Shake(frame.TextLabel)
+end)
+
 require(script.Framework.PlayerManager):Begin()
 local state = require(script.Framework.PlayerManager).GetPlayer(Players.LocalPlayer):GetState("Cash")
 --[[print(state())

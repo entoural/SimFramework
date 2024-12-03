@@ -1,4 +1,8 @@
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
+
+local Packages = ReplicatedStorage:WaitForChild("Packages")
+local Spr = require(Packages.Spr)
 
 local Offsets = {BackX = Vector2.new(-1, 0), FrontX = Vector2.new(1, 0)}
 local TweenInfos = {
@@ -37,6 +41,16 @@ function module.GradientAnimations.LoopedSpin(Gradient: UIGradient, TweenInfo: T
     Tween:Play()
 
     return Tween
+end
+
+module.GeneralEffects = {}
+
+function module.GeneralEffects.Shake(Instance: GuiObject)
+    Spr.target(Instance, 0, 4, {Rotation = 15})
+    task.wait(0.15)
+    Spr.target(Instance, 0, 4, {Rotation = 0})
+    task.wait(0.4)
+    Spr.target(Instance, 0.5, 3, {Rotation = 0})
 end
 
 return module

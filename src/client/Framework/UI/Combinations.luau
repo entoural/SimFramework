@@ -59,10 +59,10 @@ function module.ShineImageGradient(AppliedInstance: Color.GradientAppliable, Ani
 
             Gradient.Color = ColorSequence.new({
                 KeypointPresets.Start,
-                ColorSequenceKeypoint.new(math.clamp(BeginWhite - 0.15, 0, 0.349), Gray),
-                ColorSequenceKeypoint.new(BeginWhite, White),
-                ColorSequenceKeypoint.new(EndWhite, White),
-                ColorSequenceKeypoint.new(math.clamp(EndWhite + 0.15, 0.7, 1), Gray),
+                ColorSequenceKeypoint.new(math.clamp(BeginWhite - 0.15, .01, 0.349), Gray),
+                ColorSequenceKeypoint.new(math.clamp(BeginWhite, .02, .45), White),
+                ColorSequenceKeypoint.new(math.clamp(EndWhite, 0, .99), White),
+                ColorSequenceKeypoint.new(math.clamp(EndWhite + 0.15, 0.7, 0.999), Gray),
                 KeypointPresets.End
             })
 
@@ -82,16 +82,21 @@ function module.ShineImageGradient(AppliedInstance: Color.GradientAppliable, Ani
 
         StartTime = os.clock()
         _Janitor:Add(RunService.Heartbeat:Connect(function(Delta)
-            local Alpha = 1 - (math.clamp(os.clock() - StartTime, 0, 0.999) / LerpTime)
+            local Alpha = 1 - (math.clamp(os.clock() - StartTime, 0, 1) / LerpTime)
+            if Alpha == 1 then
+                Gradient.Color = StartGradient
+                return
+            end
+
             local BeginWhite = Alpha * 0.45
             local EndWhite = 1 - BeginWhite
 
             Gradient.Color = ColorSequence.new({
                 KeypointPresets.Start,
-                ColorSequenceKeypoint.new(math.clamp(BeginWhite - 0.15, 0, 0.349), Gray),
-                ColorSequenceKeypoint.new(BeginWhite, White),
-                ColorSequenceKeypoint.new(EndWhite, White),
-                ColorSequenceKeypoint.new(math.clamp(EndWhite + 0.15, 0.7, 1), Gray),
+                ColorSequenceKeypoint.new(math.clamp(BeginWhite - 0.15, 0.001, 0.349), Gray),
+                ColorSequenceKeypoint.new(math.clamp(BeginWhite, .02, .45), White),
+                ColorSequenceKeypoint.new(math.clamp(EndWhite, 0, .99), White),
+                ColorSequenceKeypoint.new(math.clamp(EndWhite + 0.15, 0.7, 0.99), Gray),
                 KeypointPresets.End
             })
 
@@ -110,8 +115,8 @@ end
 
 function module.ContinuousImageShine(AppliedInstance: Color.GradientAppliable, AnimationTime: number?, Delay: number?)
     AnimationTime = AnimationTime or 2
-    local RightOffset = Vector2.new(-0.75, 0)
-    local LeftOffset = Vector2.new(1, 0)
+    local RightOffset = Vector2.new(-.75, 0)
+    local LeftOffset = Vector2.new(.8, 0)
 
     local Gray = Color3.new(0.65, 0.65, 0.65)
     local KeypointPresets = {
@@ -142,7 +147,7 @@ function module.ContinuousImageShine(AppliedInstance: Color.GradientAppliable, A
     end
 
     task.spawn(Animate)
-    return Utility.Clock(AnimationTime + (Delay or 1), Animate)
+    return Utility.Clock(AnimationTime + (Delay or .5), Animate)
 end
 
 

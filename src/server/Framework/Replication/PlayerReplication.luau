@@ -19,7 +19,7 @@ function Replication:Replicator(Player: Player, State: () -> any, StateName: str
         if IsGlobal then
             ReplicationUpdate.FireAll(Payload)
         else
-            ReplicationUpdate.Fire(Player.Name, Payload)
+            ReplicationUpdate.Fire(Player, Payload)
         end
     end)
 end
