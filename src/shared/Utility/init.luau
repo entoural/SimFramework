@@ -23,4 +23,14 @@ function Utility.Assert(Value: any, Message: string): nil
     end
 end
 
+function Utility.AssertDependencies(Instance: Instance, Dependencies: {string})
+    for _, Dependency in Dependencies do
+        if not Instance:FindFirstChild(Dependency) then
+            return false
+        end
+    end
+
+    return true
+end
+
 return Utility

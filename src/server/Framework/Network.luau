@@ -172,6 +172,7 @@ local function SendEvents()
 		if outgoing.used > 0 then
 			local buff = buffer.create(outgoing.used)
 			buffer.copy(buff, 0, outgoing.buff, 0, outgoing.used)
+
 			reliable:FireClient(player, buff, outgoing.inst)
 
 			outgoing.buff = buffer.create(64)
@@ -215,10 +216,16 @@ local returns = table.freeze({
 			Player: (string),
 			Index: (string),
 			Value: ({
-				Type: "Cash",
+				Type: "Mana",
 				Value: (number),
 			} | {
-				Type: "Deployed",
+				Type: "Rebirths",
+				Value: (number),
+			} | {
+				Type: "Aura",
+				Value: (number),
+			} | {
+				Type: "Training",
 				Value: (boolean),
 			}),
 		}))
@@ -235,14 +242,24 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Cash" then
+			if Value.Value.Type == "Mana" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Deployed" then
+			elseif Value.Value.Type == "Rebirths" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Aura" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Training" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -254,10 +271,16 @@ local returns = table.freeze({
 			Player: (string),
 			Index: (string),
 			Value: ({
-				Type: "Cash",
+				Type: "Mana",
 				Value: (number),
 			} | {
-				Type: "Deployed",
+				Type: "Rebirths",
+				Value: (number),
+			} | {
+				Type: "Aura",
+				Value: (number),
+			} | {
+				Type: "Training",
 				Value: (boolean),
 			}),
 		}))
@@ -274,14 +297,24 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Cash" then
+			if Value.Value.Type == "Mana" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Deployed" then
+			elseif Value.Value.Type == "Rebirths" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Aura" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Training" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -300,10 +333,16 @@ local returns = table.freeze({
 			Player: (string),
 			Index: (string),
 			Value: ({
-				Type: "Cash",
+				Type: "Mana",
 				Value: (number),
 			} | {
-				Type: "Deployed",
+				Type: "Rebirths",
+				Value: (number),
+			} | {
+				Type: "Aura",
+				Value: (number),
+			} | {
+				Type: "Training",
 				Value: (boolean),
 			}),
 		}))
@@ -320,14 +359,24 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Cash" then
+			if Value.Value.Type == "Mana" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Deployed" then
+			elseif Value.Value.Type == "Rebirths" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Aura" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Training" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -348,10 +397,16 @@ local returns = table.freeze({
 			Player: (string),
 			Index: (string),
 			Value: ({
-				Type: "Cash",
+				Type: "Mana",
 				Value: (number),
 			} | {
-				Type: "Deployed",
+				Type: "Rebirths",
+				Value: (number),
+			} | {
+				Type: "Aura",
+				Value: (number),
+			} | {
+				Type: "Training",
 				Value: (boolean),
 			}),
 		}))
@@ -368,14 +423,24 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Cash" then
+			if Value.Value.Type == "Mana" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Deployed" then
+			elseif Value.Value.Type == "Rebirths" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Aura" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Training" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -394,10 +459,16 @@ local returns = table.freeze({
 			Player: (string),
 			Index: (string),
 			Value: ({
-				Type: "Cash",
+				Type: "Mana",
 				Value: (number),
 			} | {
-				Type: "Deployed",
+				Type: "Rebirths",
+				Value: (number),
+			} | {
+				Type: "Aura",
+				Value: (number),
+			} | {
+				Type: "Training",
 				Value: (boolean),
 			}),
 		}))
@@ -414,14 +485,24 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Cash" then
+			if Value.Value.Type == "Mana" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Deployed" then
+			elseif Value.Value.Type == "Rebirths" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Aura" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Training" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else

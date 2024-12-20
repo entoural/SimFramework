@@ -2,6 +2,29 @@ local module = {}
 
 export type GradientAppliable = Frame | TextLabel | TextButton | ImageLabel | ImageButton | ViewportFrame
 
+function module.DarkenColor(Input: Color3 | {Color3}, ...: Color3?): Color3...
+    local Colors = if typeof(Input) == "Color3" then {Input, ...} else Input
+    local Darkened = {}
+
+    for i, Color in Colors do
+        local H, S, V = Color:ToHSV()
+        Darkened[i] = Color3.fromHSV(H, S, V * 0.9)
+    end
+
+    return table.unpack(Darkened)
+end
+
+function module.RotationToOffset(Rotation: number, Offset: Vector2): Vector2
+    local Radians = math.rad(Rotation)
+
+    -- Calculate the rotated offset using the 2D rotation matrix
+    local RotatedX = Offset.X * math.cos(Radians) - Offset.Y * math.sin(Radians)
+    local RotatedY = Offset.X * math.sin(Radians) + Offset.Y * math.cos(Radians)
+
+    return Vector2.new(RotatedX, RotatedY)
+
+end
+
 function module.ColorsToGradient(...: Color3): ColorSequence
     local Colors: {Color3} = {...}
     if #Colors == 1 then
@@ -19,7 +42,7 @@ function module.ColorsToGradient(...: Color3): ColorSequence
     return ColorSequence.new(Keypoints)
 end
 
-function module.ColorToShineColors(Color: Color3)
+function module.ColorToShineColors(Color: Color3): {Color3}
     local H, S, V = Color:ToHSV()
     S = math.clamp(S * 0.75, 0, 1)
     V = math.clamp(S * 1.2, 0, 1)
@@ -28,7 +51,7 @@ function module.ColorToShineColors(Color: Color3)
     return {Color, ShineColor, Color}
 end
 
-function module.ColorToShineSequence(Colors: {Color3})
+function module.ColorToShineSequence(Colors: {Color3}): ColorSequence
     local Keypoints = {
         ColorSequenceKeypoint.new(0, Colors[1]),
         ColorSequenceKeypoint.new(0.2, Colors[1]),

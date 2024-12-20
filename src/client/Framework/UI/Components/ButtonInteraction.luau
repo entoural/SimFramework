@@ -3,22 +3,19 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Packages = ReplicatedStorage:WaitForChild("Packages")
 local Vide = require(Packages.Vide)
 local Signal = require(Packages.Signal)
+local HoverInteraction = require(script.Parent.HoverInteraction)
 
-type Props = {Instance: GuiButton, Toggle: boolean?, ClickValue: boolean?}
+type Props = {Instance: GuiButton, Toggle: boolean?, ClickValue: boolean?, HoverInteraction: Vide.Source<boolean>}
 
-return function(Source: Vide.source<boolean>, Props: Props)
+return function(Source: Vide.Source<boolean>, Props: Props)
     local Button = {
         Clicked = Signal.new(),
-        Hovered = Vide.source(),
+        Hovered = Props.HoverInteraction or HoverInteraction(Props.Instance),
         Locked = false,
         Source = Source,
         Props = Props,
         Instance = Props.Instance
     }
-
-    if Props.Toggle then
-        Button.Toggled = Source
-    end
 
     Button.Instance.MouseButton1Click:Connect(function()
         Button.Clicked:Fire()
@@ -27,13 +24,6 @@ return function(Source: Vide.source<boolean>, Props: Props)
         else
             Source(Props.ClickValue)
         end
-    end)
-
-    Button.Instance.MouseEnter:Connect(function(x, y)
-        Button.Hovered(true)
-    end)
-    Button.Instance.MouseLeave:Connect(function(x, y)
-        Button.Hovered(false)
     end)
 
     return Button

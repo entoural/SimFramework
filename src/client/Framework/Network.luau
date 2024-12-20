@@ -174,10 +174,16 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 			value.Value = {}
 			local enum_value_1 = buffer.readu8(incoming_buff, read(1))
 			if enum_value_1 == 0 then
-				value.Value.Type = "Cash"
+				value.Value.Type = "Mana"
 				value.Value.Value = buffer.readu32(incoming_buff, read(4))
 			elseif enum_value_1 == 1 then
-				value.Value.Type = "Deployed"
+				value.Value.Type = "Rebirths"
+				value.Value.Value = buffer.readu32(incoming_buff, read(4))
+			elseif enum_value_1 == 2 then
+				value.Value.Type = "Aura"
+				value.Value.Value = buffer.readu32(incoming_buff, read(4))
+			elseif enum_value_1 == 3 then
+				value.Value.Type = "Training"
 				value.Value.Value = buffer.readu8(incoming_buff, read(1)) == 1
 			else
 				error("Invalid variant")
@@ -261,10 +267,16 @@ local returns = table.freeze({
 			Player: (string),
 			Index: (string),
 			Value: ({
-				Type: "Cash",
+				Type: "Mana",
 				Value: (number),
 			} | {
-				Type: "Deployed",
+				Type: "Rebirths",
+				Value: (number),
+			} | {
+				Type: "Aura",
+				Value: (number),
+			} | {
+				Type: "Training",
 				Value: (boolean),
 			}),
 		})) -> ()): () -> ()

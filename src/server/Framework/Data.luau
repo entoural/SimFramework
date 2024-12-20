@@ -4,7 +4,9 @@ local ServerPackages = ServerStorage:WaitForChild("ServerPackages")
 local ProfileService = require(ServerPackages.ProfileService)
 
 export type Data = {
-    Cash: number,
+    Mana: number,
+    Rebirths: number,
+    Aura: number,
     Logins: number,
     DailyStreak: number,
     DailyStreakLastAwarded: number,
@@ -24,7 +26,9 @@ local Data: {DefaultProfile: Data} = {}
 
 Data.DefaultProfile = {
     Logins = 0,
-    Cash = 0,
+    Mana = 0,
+    Aura = 0,
+    Rebirths = 0,
     DailyStreak = 1,
     DailyStreakLastAwarded = math.huge,
     OwnedGamepasses = {},

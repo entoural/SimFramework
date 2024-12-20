@@ -45,12 +45,22 @@ end
 
 module.GeneralEffects = {}
 
+local ShakeTasks = {}
+
 function module.GeneralEffects.Shake(Instance: GuiObject)
-    Spr.target(Instance, 0, 4, {Rotation = 15})
-    task.wait(0.15)
-    Spr.target(Instance, 0, 4, {Rotation = 0})
-    task.wait(0.4)
-    Spr.target(Instance, 0.5, 3, {Rotation = 0})
+    if ShakeTasks[Instance] then
+        task.cancel(ShakeTasks[Instance])
+    end
+
+    ShakeTasks[Instance] = task.spawn(function()
+        Spr.target(Instance, 0, 4, {Rotation = 15})
+        task.wait(0.15)
+        Spr.target(Instance, 0, 4, {Rotation = 0})
+        task.wait(0.4)
+        Spr.target(Instance, 0.5, 3, {Rotation = 0})
+
+        ShakeTasks[Instance] = nil
+    end)
 end
 
 return module

@@ -9,8 +9,10 @@ event PlayerStateUpdate = {
         Player: string,
         Index: string,
         Value: enum "Type" {
-            Cash {Value: u32},
-            Deployed {Value: boolean}
+            Mana {Value: u32},
+            Rebirths {Value: u32},
+            Aura {Value: u32},
+            Training {Value: boolean}
         }
     }
 }
