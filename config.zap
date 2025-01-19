@@ -6,13 +6,20 @@ event PlayerStateUpdate = {
 	type: Reliable,
 	call: SingleAsync,
     data: struct {
-        Player: string,
+        Player: string?,
         Index: string,
         Value: enum "Type" {
-            Mana {Value: u32},
-            Rebirths {Value: u32},
-            Aura {Value: u32},
-            Training {Value: boolean}
+            Wins {Value: u32},
+            Cash {Value: u32},
+            PlayedRound {Value: boolean},
+            RoundState {Value: struct {
+                State: string,
+                Num1: u16?,
+                Num2: u16?
+            }},
+            Winners {Value: string[]},
+            ShowingTiles {Value: Instance[]},
+            InRound {Value: boolean}
         }
     }
 }
@@ -22,14 +29,12 @@ event UpdatePlayerPasses = {
 	type: Reliable,
 	call: ManyAsync,
     data: struct {
-        Payload: struct {
-            Player: string,
-            Data: struct {
-                Name: string,
-                Owned: boolean,
-                Gifted: boolean
-            }
-        }[]
+        Player: string,
+        Data: struct {
+            Name: string,
+            Owned: boolean,
+            Gifted: boolean
+        }
     }[]
 }
 
@@ -41,6 +46,12 @@ event PlayerLeft = {
 }
 
 event RequestData = {
+	from: Client,
+	type: Reliable,
+	call: SingleAsync
+}
+
+event RejoinRound = {
 	from: Client,
 	type: Reliable,
 	call: SingleAsync

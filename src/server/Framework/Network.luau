@@ -130,6 +130,9 @@ if not RunService:IsRunning() then
 		RequestData = table.freeze({
 			SetCallback = noop
 		}),
+		RejoinRound = table.freeze({
+			SetCallback = noop
+		}),
 		RequestReplication = table.freeze({
 			SetCallback = noop
 		}),
@@ -185,7 +188,7 @@ end
 
 RunService.Heartbeat:Connect(SendEvents)
 
-local events = table.create(5)
+local events = table.create(6)
 reliable.OnServerEvent:Connect(function(player, buff, inst)
 	incoming_buff = buff
 	incoming_inst = inst
@@ -204,6 +207,11 @@ reliable.OnServerEvent:Connect(function(player, buff, inst)
 			if events[5] then
 				task.spawn(events[5], player, value)
 			end
+		elseif id == 6 then
+			local value
+			if events[6] then
+				task.spawn(events[6], player, value)
+			end
 		else
 			error("Unknown event id")
 		end
@@ -213,53 +221,123 @@ local returns = table.freeze({
 	SendEvents = SendEvents,
 	PlayerStateUpdate = table.freeze({
 		Fire = function(Player: Player, Value: ({
-			Player: (string),
+			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Mana",
+				Type: "Wins",
 				Value: (number),
 			} | {
-				Type: "Rebirths",
+				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "Aura",
-				Value: (number),
+				Type: "PlayedRound",
+				Value: (boolean),
 			} | {
-				Type: "Training",
+				Type: "RoundState",
+				Value: ({
+					State: (string),
+					Num1: ((number)?),
+					Num2: ((number)?),
+				}),
+			} | {
+				Type: "Winners",
+				Value: ({ (string) }),
+			} | {
+				Type: "ShowingTiles",
+				Value: ({ (Instance) }),
+			} | {
+				Type: "InRound",
 				Value: (boolean),
 			}),
 		}))
 			load_player(Player)
 			alloc(1)
 			buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-			local len_1 = #Value.Player
-			alloc(2)
-			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
-			alloc(len_1)
-			buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			if Value.Player == nil then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+			else
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				local len_1 = #Value.Player
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+				alloc(len_1)
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			end
 			local len_2 = #Value.Index
 			alloc(2)
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Mana" then
+			if Value.Value.Type == "Wins" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Rebirths" then
+			elseif Value.Value.Type == "Cash" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Aura" then
+			elseif Value.Value.Type == "PlayedRound" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
-				alloc(4)
-				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Training" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
+			elseif Value.Value.Type == "RoundState" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
+				local len_3 = #Value.Value.Value.State
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+				alloc(len_3)
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value.State, len_3)
+				if Value.Value.Value.Num1 == nil then
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+				else
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num1)
+				end
+				if Value.Value.Value.Num2 == nil then
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+				else
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num2)
+				end
+			elseif Value.Value.Type == "Winners" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+				local len_4 = #Value.Value.Value
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
+				for i_1 = 1, len_4 do
+					local val_1 = Value.Value.Value[i_1]
+					local len_5 = #val_1
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_5)
+					alloc(len_5)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_1, len_5)
+				end
+			elseif Value.Value.Type == "ShowingTiles" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+				local len_6 = #Value.Value.Value
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_6)
+				for i_2 = 1, len_6 do
+					local val_2 = Value.Value.Value[i_2]
+					table.insert(outgoing_inst, val_2)
+				end
+			elseif Value.Value.Type == "InRound" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -268,53 +346,123 @@ local returns = table.freeze({
 			player_map[Player] = save()
 		end,
 		FireAll = function(Value: ({
-			Player: (string),
+			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Mana",
+				Type: "Wins",
 				Value: (number),
 			} | {
-				Type: "Rebirths",
+				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "Aura",
-				Value: (number),
+				Type: "PlayedRound",
+				Value: (boolean),
 			} | {
-				Type: "Training",
+				Type: "RoundState",
+				Value: ({
+					State: (string),
+					Num1: ((number)?),
+					Num2: ((number)?),
+				}),
+			} | {
+				Type: "Winners",
+				Value: ({ (string) }),
+			} | {
+				Type: "ShowingTiles",
+				Value: ({ (Instance) }),
+			} | {
+				Type: "InRound",
 				Value: (boolean),
 			}),
 		}))
 			load_empty()
 			alloc(1)
 			buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-			local len_1 = #Value.Player
-			alloc(2)
-			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
-			alloc(len_1)
-			buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			if Value.Player == nil then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+			else
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				local len_1 = #Value.Player
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+				alloc(len_1)
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			end
 			local len_2 = #Value.Index
 			alloc(2)
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Mana" then
+			if Value.Value.Type == "Wins" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Rebirths" then
+			elseif Value.Value.Type == "Cash" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Aura" then
+			elseif Value.Value.Type == "PlayedRound" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
-				alloc(4)
-				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Training" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
+			elseif Value.Value.Type == "RoundState" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
+				local len_3 = #Value.Value.Value.State
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+				alloc(len_3)
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value.State, len_3)
+				if Value.Value.Value.Num1 == nil then
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+				else
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num1)
+				end
+				if Value.Value.Value.Num2 == nil then
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+				else
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num2)
+				end
+			elseif Value.Value.Type == "Winners" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+				local len_4 = #Value.Value.Value
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
+				for i_1 = 1, len_4 do
+					local val_1 = Value.Value.Value[i_1]
+					local len_5 = #val_1
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_5)
+					alloc(len_5)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_1, len_5)
+				end
+			elseif Value.Value.Type == "ShowingTiles" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+				local len_6 = #Value.Value.Value
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_6)
+				for i_2 = 1, len_6 do
+					local val_2 = Value.Value.Value[i_2]
+					table.insert(outgoing_inst, val_2)
+				end
+			elseif Value.Value.Type == "InRound" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -330,53 +478,123 @@ local returns = table.freeze({
 			end
 		end,
 		FireExcept = function(Except: Player, Value: ({
-			Player: (string),
+			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Mana",
+				Type: "Wins",
 				Value: (number),
 			} | {
-				Type: "Rebirths",
+				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "Aura",
-				Value: (number),
+				Type: "PlayedRound",
+				Value: (boolean),
 			} | {
-				Type: "Training",
+				Type: "RoundState",
+				Value: ({
+					State: (string),
+					Num1: ((number)?),
+					Num2: ((number)?),
+				}),
+			} | {
+				Type: "Winners",
+				Value: ({ (string) }),
+			} | {
+				Type: "ShowingTiles",
+				Value: ({ (Instance) }),
+			} | {
+				Type: "InRound",
 				Value: (boolean),
 			}),
 		}))
 			load_empty()
 			alloc(1)
 			buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-			local len_1 = #Value.Player
-			alloc(2)
-			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
-			alloc(len_1)
-			buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			if Value.Player == nil then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+			else
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				local len_1 = #Value.Player
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+				alloc(len_1)
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			end
 			local len_2 = #Value.Index
 			alloc(2)
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Mana" then
+			if Value.Value.Type == "Wins" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Rebirths" then
+			elseif Value.Value.Type == "Cash" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Aura" then
+			elseif Value.Value.Type == "PlayedRound" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
-				alloc(4)
-				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Training" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
+			elseif Value.Value.Type == "RoundState" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
+				local len_3 = #Value.Value.Value.State
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+				alloc(len_3)
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value.State, len_3)
+				if Value.Value.Value.Num1 == nil then
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+				else
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num1)
+				end
+				if Value.Value.Value.Num2 == nil then
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+				else
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num2)
+				end
+			elseif Value.Value.Type == "Winners" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+				local len_4 = #Value.Value.Value
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
+				for i_1 = 1, len_4 do
+					local val_1 = Value.Value.Value[i_1]
+					local len_5 = #val_1
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_5)
+					alloc(len_5)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_1, len_5)
+				end
+			elseif Value.Value.Type == "ShowingTiles" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+				local len_6 = #Value.Value.Value
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_6)
+				for i_2 = 1, len_6 do
+					local val_2 = Value.Value.Value[i_2]
+					table.insert(outgoing_inst, val_2)
+				end
+			elseif Value.Value.Type == "InRound" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -394,53 +612,123 @@ local returns = table.freeze({
 			end
 		end,
 		FireList = function(List: { Player }, Value: ({
-			Player: (string),
+			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Mana",
+				Type: "Wins",
 				Value: (number),
 			} | {
-				Type: "Rebirths",
+				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "Aura",
-				Value: (number),
+				Type: "PlayedRound",
+				Value: (boolean),
 			} | {
-				Type: "Training",
+				Type: "RoundState",
+				Value: ({
+					State: (string),
+					Num1: ((number)?),
+					Num2: ((number)?),
+				}),
+			} | {
+				Type: "Winners",
+				Value: ({ (string) }),
+			} | {
+				Type: "ShowingTiles",
+				Value: ({ (Instance) }),
+			} | {
+				Type: "InRound",
 				Value: (boolean),
 			}),
 		}))
 			load_empty()
 			alloc(1)
 			buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-			local len_1 = #Value.Player
-			alloc(2)
-			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
-			alloc(len_1)
-			buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			if Value.Player == nil then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+			else
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				local len_1 = #Value.Player
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+				alloc(len_1)
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			end
 			local len_2 = #Value.Index
 			alloc(2)
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Mana" then
+			if Value.Value.Type == "Wins" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Rebirths" then
+			elseif Value.Value.Type == "Cash" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Aura" then
+			elseif Value.Value.Type == "PlayedRound" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
-				alloc(4)
-				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Training" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
+			elseif Value.Value.Type == "RoundState" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
+				local len_3 = #Value.Value.Value.State
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+				alloc(len_3)
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value.State, len_3)
+				if Value.Value.Value.Num1 == nil then
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+				else
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num1)
+				end
+				if Value.Value.Value.Num2 == nil then
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+				else
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num2)
+				end
+			elseif Value.Value.Type == "Winners" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+				local len_4 = #Value.Value.Value
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
+				for i_1 = 1, len_4 do
+					local val_1 = Value.Value.Value[i_1]
+					local len_5 = #val_1
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_5)
+					alloc(len_5)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_1, len_5)
+				end
+			elseif Value.Value.Type == "ShowingTiles" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+				local len_6 = #Value.Value.Value
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_6)
+				for i_2 = 1, len_6 do
+					local val_2 = Value.Value.Value[i_2]
+					table.insert(outgoing_inst, val_2)
+				end
+			elseif Value.Value.Type == "InRound" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -456,53 +744,123 @@ local returns = table.freeze({
 			end
 		end,
 		FireSet = function(Set: { [Player]: true }, Value: ({
-			Player: (string),
+			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Mana",
+				Type: "Wins",
 				Value: (number),
 			} | {
-				Type: "Rebirths",
+				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "Aura",
-				Value: (number),
+				Type: "PlayedRound",
+				Value: (boolean),
 			} | {
-				Type: "Training",
+				Type: "RoundState",
+				Value: ({
+					State: (string),
+					Num1: ((number)?),
+					Num2: ((number)?),
+				}),
+			} | {
+				Type: "Winners",
+				Value: ({ (string) }),
+			} | {
+				Type: "ShowingTiles",
+				Value: ({ (Instance) }),
+			} | {
+				Type: "InRound",
 				Value: (boolean),
 			}),
 		}))
 			load_empty()
 			alloc(1)
 			buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-			local len_1 = #Value.Player
-			alloc(2)
-			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
-			alloc(len_1)
-			buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			if Value.Player == nil then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+			else
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+				local len_1 = #Value.Player
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+				alloc(len_1)
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Player, len_1)
+			end
 			local len_2 = #Value.Index
 			alloc(2)
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Mana" then
+			if Value.Value.Type == "Wins" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Rebirths" then
+			elseif Value.Value.Type == "Cash" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Aura" then
+			elseif Value.Value.Type == "PlayedRound" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
-				alloc(4)
-				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "Training" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
+			elseif Value.Value.Type == "RoundState" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
+				local len_3 = #Value.Value.Value.State
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+				alloc(len_3)
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value.State, len_3)
+				if Value.Value.Value.Num1 == nil then
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+				else
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num1)
+				end
+				if Value.Value.Value.Num2 == nil then
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
+				else
+					alloc(1)
+					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num2)
+				end
+			elseif Value.Value.Type == "Winners" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+				local len_4 = #Value.Value.Value
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
+				for i_1 = 1, len_4 do
+					local val_1 = Value.Value.Value[i_1]
+					local len_5 = #val_1
+					alloc(2)
+					buffer.writeu16(outgoing_buff, outgoing_apos, len_5)
+					alloc(len_5)
+					buffer.writestring(outgoing_buff, outgoing_apos, val_1, len_5)
+				end
+			elseif Value.Value.Type == "ShowingTiles" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+				local len_6 = #Value.Value.Value
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_6)
+				for i_2 = 1, len_6 do
+					local val_2 = Value.Value.Value[i_2]
+					table.insert(outgoing_inst, val_2)
+				end
+			elseif Value.Value.Type == "InRound" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -520,14 +878,12 @@ local returns = table.freeze({
 	}),
 	UpdatePlayerPasses = table.freeze({
 		Fire = function(Player: Player, Value: ({ ({
-			Payload: ({ ({
-				Player: (string),
-				Data: ({
-					Name: (string),
-					Owned: (boolean),
-					Gifted: (boolean),
-				}),
-			}) }),
+			Player: (string),
+			Data: ({
+				Name: (string),
+				Owned: (boolean),
+				Gifted: (boolean),
+			}),
 		}) }))
 			load_player(Player)
 			alloc(1)
@@ -537,38 +893,30 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
 			for i_1 = 1, len_1 do
 				local val_1 = Value[i_1]
-				local len_2 = #val_1.Payload
+				local len_2 = #val_1.Player
 				alloc(2)
 				buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
-				for i_2 = 1, len_2 do
-					local val_2 = val_1.Payload[i_2]
-					local len_3 = #val_2.Player
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
-					alloc(len_3)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Player, len_3)
-					local len_4 = #val_2.Data.Name
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
-					alloc(len_4)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Data.Name, len_4)
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Owned and 1 or 0)
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Gifted and 1 or 0)
-				end
+				alloc(len_2)
+				buffer.writestring(outgoing_buff, outgoing_apos, val_1.Player, len_2)
+				local len_3 = #val_1.Data.Name
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+				alloc(len_3)
+				buffer.writestring(outgoing_buff, outgoing_apos, val_1.Data.Name, len_3)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, val_1.Data.Owned and 1 or 0)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, val_1.Data.Gifted and 1 or 0)
 			end
 			player_map[Player] = save()
 		end,
 		FireAll = function(Value: ({ ({
-			Payload: ({ ({
-				Player: (string),
-				Data: ({
-					Name: (string),
-					Owned: (boolean),
-					Gifted: (boolean),
-				}),
-			}) }),
+			Player: (string),
+			Data: ({
+				Name: (string),
+				Owned: (boolean),
+				Gifted: (boolean),
+			}),
 		}) }))
 			load_empty()
 			alloc(1)
@@ -578,26 +926,20 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
 			for i_1 = 1, len_1 do
 				local val_1 = Value[i_1]
-				local len_2 = #val_1.Payload
+				local len_2 = #val_1.Player
 				alloc(2)
 				buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
-				for i_2 = 1, len_2 do
-					local val_2 = val_1.Payload[i_2]
-					local len_3 = #val_2.Player
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
-					alloc(len_3)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Player, len_3)
-					local len_4 = #val_2.Data.Name
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
-					alloc(len_4)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Data.Name, len_4)
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Owned and 1 or 0)
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Gifted and 1 or 0)
-				end
+				alloc(len_2)
+				buffer.writestring(outgoing_buff, outgoing_apos, val_1.Player, len_2)
+				local len_3 = #val_1.Data.Name
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+				alloc(len_3)
+				buffer.writestring(outgoing_buff, outgoing_apos, val_1.Data.Name, len_3)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, val_1.Data.Owned and 1 or 0)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, val_1.Data.Gifted and 1 or 0)
 			end
 			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
 			for _, player in Players:GetPlayers() do
@@ -609,14 +951,12 @@ local returns = table.freeze({
 			end
 		end,
 		FireExcept = function(Except: Player, Value: ({ ({
-			Payload: ({ ({
-				Player: (string),
-				Data: ({
-					Name: (string),
-					Owned: (boolean),
-					Gifted: (boolean),
-				}),
-			}) }),
+			Player: (string),
+			Data: ({
+				Name: (string),
+				Owned: (boolean),
+				Gifted: (boolean),
+			}),
 		}) }))
 			load_empty()
 			alloc(1)
@@ -626,26 +966,20 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
 			for i_1 = 1, len_1 do
 				local val_1 = Value[i_1]
-				local len_2 = #val_1.Payload
+				local len_2 = #val_1.Player
 				alloc(2)
 				buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
-				for i_2 = 1, len_2 do
-					local val_2 = val_1.Payload[i_2]
-					local len_3 = #val_2.Player
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
-					alloc(len_3)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Player, len_3)
-					local len_4 = #val_2.Data.Name
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
-					alloc(len_4)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Data.Name, len_4)
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Owned and 1 or 0)
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Gifted and 1 or 0)
-				end
+				alloc(len_2)
+				buffer.writestring(outgoing_buff, outgoing_apos, val_1.Player, len_2)
+				local len_3 = #val_1.Data.Name
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+				alloc(len_3)
+				buffer.writestring(outgoing_buff, outgoing_apos, val_1.Data.Name, len_3)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, val_1.Data.Owned and 1 or 0)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, val_1.Data.Gifted and 1 or 0)
 			end
 			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
 			for _, player in Players:GetPlayers() do
@@ -659,14 +993,12 @@ local returns = table.freeze({
 			end
 		end,
 		FireList = function(List: { Player }, Value: ({ ({
-			Payload: ({ ({
-				Player: (string),
-				Data: ({
-					Name: (string),
-					Owned: (boolean),
-					Gifted: (boolean),
-				}),
-			}) }),
+			Player: (string),
+			Data: ({
+				Name: (string),
+				Owned: (boolean),
+				Gifted: (boolean),
+			}),
 		}) }))
 			load_empty()
 			alloc(1)
@@ -676,26 +1008,20 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
 			for i_1 = 1, len_1 do
 				local val_1 = Value[i_1]
-				local len_2 = #val_1.Payload
+				local len_2 = #val_1.Player
 				alloc(2)
 				buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
-				for i_2 = 1, len_2 do
-					local val_2 = val_1.Payload[i_2]
-					local len_3 = #val_2.Player
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
-					alloc(len_3)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Player, len_3)
-					local len_4 = #val_2.Data.Name
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
-					alloc(len_4)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Data.Name, len_4)
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Owned and 1 or 0)
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Gifted and 1 or 0)
-				end
+				alloc(len_2)
+				buffer.writestring(outgoing_buff, outgoing_apos, val_1.Player, len_2)
+				local len_3 = #val_1.Data.Name
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+				alloc(len_3)
+				buffer.writestring(outgoing_buff, outgoing_apos, val_1.Data.Name, len_3)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, val_1.Data.Owned and 1 or 0)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, val_1.Data.Gifted and 1 or 0)
 			end
 			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
 			for _, player in List do
@@ -707,14 +1033,12 @@ local returns = table.freeze({
 			end
 		end,
 		FireSet = function(Set: { [Player]: true }, Value: ({ ({
-			Payload: ({ ({
-				Player: (string),
-				Data: ({
-					Name: (string),
-					Owned: (boolean),
-					Gifted: (boolean),
-				}),
-			}) }),
+			Player: (string),
+			Data: ({
+				Name: (string),
+				Owned: (boolean),
+				Gifted: (boolean),
+			}),
 		}) }))
 			load_empty()
 			alloc(1)
@@ -724,26 +1048,20 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
 			for i_1 = 1, len_1 do
 				local val_1 = Value[i_1]
-				local len_2 = #val_1.Payload
+				local len_2 = #val_1.Player
 				alloc(2)
 				buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
-				for i_2 = 1, len_2 do
-					local val_2 = val_1.Payload[i_2]
-					local len_3 = #val_2.Player
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
-					alloc(len_3)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Player, len_3)
-					local len_4 = #val_2.Data.Name
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
-					alloc(len_4)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_2.Data.Name, len_4)
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Owned and 1 or 0)
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, val_2.Data.Gifted and 1 or 0)
-				end
+				alloc(len_2)
+				buffer.writestring(outgoing_buff, outgoing_apos, val_1.Player, len_2)
+				local len_3 = #val_1.Data.Name
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
+				alloc(len_3)
+				buffer.writestring(outgoing_buff, outgoing_apos, val_1.Data.Name, len_3)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, val_1.Data.Owned and 1 or 0)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, val_1.Data.Gifted and 1 or 0)
 			end
 			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
 			for player in Set do
@@ -850,11 +1168,19 @@ local returns = table.freeze({
 			end
 		end,
 	}),
-	RequestReplication = table.freeze({
+	RejoinRound = table.freeze({
 		SetCallback = function(Callback: (Player) -> ()): () -> ()
 			events[5] = Callback
 			return function()
 				events[5] = nil
+			end
+		end,
+	}),
+	RequestReplication = table.freeze({
+		SetCallback = function(Callback: (Player) -> ()): () -> ()
+			events[6] = Callback
+			return function()
+				events[6] = nil
 			end
 		end,
 	}),

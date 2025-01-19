@@ -51,7 +51,7 @@ function Manager:AddPlayer(Player: Player)
     self.PlayerAdded:Fire(NewPlayer)
 end
 
-function Manager:GetPlayer(Player: Player): PlayerClass.PlayerObject
+function Manager:GetPlayer(Player: Player, DontYield: boolean?): PlayerClass.PlayerObject
     if not Player or not Player:IsA("Player") or Player.Parent ~= Players then
         return
     end
@@ -59,7 +59,7 @@ function Manager:GetPlayer(Player: Player): PlayerClass.PlayerObject
     local Resolved = false
     local PlayerObject = self.PlayerList[Player]
 
-    if PlayerObject then
+    if PlayerObject or DontYield then
         return PlayerObject
     end
 

@@ -16,13 +16,14 @@ return function(Source: Types.HoverInteraction, Instance: GuiObject, Input: stri
     local Darkened1, Darkened2 = ColorUtility.DarkenColor(Color1, Color2)
     local White = Color3.new(1, 1, 1)
     local WhiteRange = Instance.AbsoluteSize.Y / Instance.AbsoluteSize.X * 0.06
+    --local WhiteRange = 10 / Instance.AbsoluteSize.Y * (Instance.AbsoluteSize.Y / Instance.AbsoluteSize.X)
 
     local Sequence = ColorSequence.new({
         ColorSequenceKeypoint.new(0, Darkened1),
-        ColorSequenceKeypoint.new(.5 - WhiteRange * 1.75, Color1),
+        ColorSequenceKeypoint.new(.5 - WhiteRange * 1.1, Color1),
         ColorSequenceKeypoint.new(.5 - WhiteRange, White),
         ColorSequenceKeypoint.new(.5 + WhiteRange, White),
-        ColorSequenceKeypoint.new(.5 + WhiteRange * 1.75, Color2),
+        ColorSequenceKeypoint.new(.5 + WhiteRange * 1.1, Color2),
         ColorSequenceKeypoint.new(1, Darkened2),
     })
 

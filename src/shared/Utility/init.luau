@@ -7,6 +7,7 @@ local Effect = Vide.effect
 
 local Utility = {}
 
+Utility.Abbreviate = require(script.Abbreviate)
 Utility.Clock = require(script.Clock)
 
 function Utility.RootedEffect(Callback: (Destructor: () -> any) -> any)
@@ -21,6 +22,19 @@ function Utility.Assert(Value: any, Message: string): nil
     if not Value then
         warn(Message)
     end
+end
+
+function Utility.EnsureUIScale(InstanceToCheck: Instance): UIScale
+    local Scale = InstanceToCheck:FindFirstChild("UIScale")
+
+    if Scale and Scale.Name ~= "UIScale" then
+        Scale.Name = "UIScale"
+    elseif not Scale then
+        Scale = Instance.new("UIScale")
+        Scale.Parent = InstanceToCheck
+    end
+
+    return Scale
 end
 
 function Utility.AssertDependencies(Instance: Instance, Dependencies: {string})

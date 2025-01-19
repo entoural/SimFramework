@@ -5,12 +5,14 @@ local SharedUtility = require(Shared.Utility)
 local PlayerManager = require(script.Parent.Parent.PlayerManager)
 local Network = require(script.Parent.Parent.Network)
 local RequestReplication = Network.RequestReplication
+local UpdatePasses = Network.UpdatePlayerPasses
 local ReplicationUpdate = Network.PlayerStateUpdate
 
 local Replication = {}
 
 Replication.ReplicationList = {}
 Replication.ReplicatorStates = {}
+Replication.GlobalStates = {}
 
 function Replication:Replicator(Player: Player, State: () -> any, StateName: string, IsGlobal: boolean?)
     SharedUtility.RootedEffect(function()
@@ -67,6 +69,37 @@ function Replication:ReplicatePlayer(PlayerInstance: Player)
             table.remove(self.ReplicatorStates, table.find(self.ReplicatorStates, State))
         end
     end
+
+    for _, State in self.GlobalStates do
+        ReplicationUpdate.Fire(PlayerInstance, {Value = {Value = State.State(), Type = State.Index}, Index = State.Index})
+    end
+
+    local PassPayload = {}
+    local PlayerPayload = {}
+
+    for _, Object in PlayerManager.PlayerList do
+       for Name, Pass in Object.Data.OwnedGamepasses do
+            local Update = {Player = Object.Name, Data = {Name = Name, Owned = Pass.Owned, Gifted = Pass.Gifted, PurchasedAt = Pass.PurchasedAt}}
+            table.insert(PassPayload, Update)
+
+            if Object == Player then
+                table.insert(PlayerPayload, Update)
+            end
+       end
+    end
+
+    UpdatePasses.Fire(PlayerInstance, PassPayload)
+    UpdatePasses.FireExcept(PlayerInstance, PlayerPayload)
+end
+
+function Replication:ReplicateGlobalState<T>(StateName: string, State: (T?) -> T)
+    table.insert(self.GlobalStates, {State = State, Index = StateName})
+
+    SharedUtility.RootedEffect(function(Destructor)
+        local Payload = {Value = {Value = State(), Type = StateName}, Index = StateName}
+
+        ReplicationUpdate.FireAll(Payload)
+    end)
 end
 
 function Replication:Listen()

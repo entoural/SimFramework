@@ -2,6 +2,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Packages = ReplicatedStorage:WaitForChild("Packages")
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Utility = require(Shared.Utility)
 local Spr = require(Packages.Spr)
 
 local Offsets = {BackX = Vector2.new(-1, 0), FrontX = Vector2.new(1, 0)}
@@ -47,19 +49,41 @@ module.GeneralEffects = {}
 
 local ShakeTasks = {}
 
-function module.GeneralEffects.Shake(Instance: GuiObject)
+function module.GeneralEffects.Shake(Instance: GuiObject, Speed: number)
+    Speed = Speed or 1
+
     if ShakeTasks[Instance] then
         task.cancel(ShakeTasks[Instance])
     end
 
     ShakeTasks[Instance] = task.spawn(function()
-        Spr.target(Instance, 0, 4, {Rotation = 15})
-        task.wait(0.15)
-        Spr.target(Instance, 0, 4, {Rotation = 0})
-        task.wait(0.4)
-        Spr.target(Instance, 0.5, 3, {Rotation = 0})
+        Spr.target(Instance, .3, 3 * Speed, {Rotation = -20})
+        task.wait(.2 / Speed)
+        Spr.target(Instance, .1, 2 * Speed, {Rotation = 0})
+        task.wait(3 / Speed)
+        Spr.target(Instance, 1.2, 4 * Speed, {Rotation = 0})
 
         ShakeTasks[Instance] = nil
+    end)
+end
+
+local BurstTasks = {}
+
+function module.GeneralEffects.Burst(Instance: GuiObject, Multi: number?, BackTo: number?)
+    local Scale = Utility.EnsureUIScale(Instance)
+    local OriginalScale = Scale.Scale
+
+    if BurstTasks[Instance] then
+        task.cancel(BurstTasks[Instance])
+    end
+
+    BurstTasks[Instance] = task.spawn(function()
+        Spr.target(Scale, .5, 5, {Scale = Multi or 1.15})
+        task.wait(.1)
+        Spr.target(Scale, .5, 5, {Scale = BackTo or 1})
+        task.wait(.2)
+
+        BurstTasks[Instance] = nil
     end)
 end
 

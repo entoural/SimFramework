@@ -19,6 +19,40 @@ function module:CreateDataState(Index: string, Convert: (any) -> any, InstanceTy
     end
 end
 
+function module:ReplicateDataState(Index: string, IsGlobal: boolean?)
+    local Initial = function(Object: PlayerClass.PlayerObject)
+        return Object.Data[Index]
+    end
+
+    PlayerManager:AddState(Index, Initial)
+    PlayerReplication:ReplicateState(Index, IsGlobal)
+end
+
+function module:ReplicateDataStates(DataStates)
+    for _, DataState in DataStates do
+        self:ReplicateDataState(table.unpack(DataState))
+    end
+end
+
+function module:ReplicateState(Index: string, Initial: any, IsGlobal: boolean?)
+    if Initial == "GetData" then
+        Initial = function(Object: PlayerClass.PlayerObject)
+            return Object.Data[Index]
+        end
+    end
+
+    PlayerManager:AddState(Index, Initial)
+    PlayerReplication:ReplicateState(Index, IsGlobal)
+end
+
+function module:ReplicateStates(DataStates)
+    for _, DataState in DataStates do
+        self:ReplicateState(table.unpack(DataState))
+    end
+end
+
+
+
 function module:LoadDataStates(DataStates)
     for _, DataState in DataStates do
         self:CreateDataState(table.unpack(DataState))

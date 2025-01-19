@@ -17,14 +17,20 @@ return function(Source: Vide.Source<boolean>, Props: Props)
         Instance = Props.Instance
     }
 
-    Button.Instance.MouseButton1Click:Connect(function()
-        Button.Clicked:Fire()
-        if Props.Toggle and not Button.Locked then
-            Source(not Source())
-        else
-            Source(Props.ClickValue)
-        end
-    end)
+    if Source then
+        Button.Instance.MouseButton1Click:Connect(function()
+            Button.Clicked:Fire()
+            if Props.Toggle and not Button.Locked then
+                Source(not Source())
+            else
+                Source(Props.ClickValue)
+            end
+        end)
+    else
+        Button.Instance.MouseButton1Click:Connect(function()
+            Button.Clicked:Fire()
+        end)
+    end
 
     return Button
 end

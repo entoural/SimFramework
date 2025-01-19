@@ -118,6 +118,9 @@ if not RunService:IsRunning() then
 		RequestData = table.freeze({
 			Fire = noop
 		}),
+		RejoinRound = table.freeze({
+			Fire = noop
+		}),
 		RequestReplication = table.freeze({
 			Fire = noop
 		}),
@@ -149,8 +152,8 @@ end
 
 RunService.Heartbeat:Connect(SendEvents)
 
-local events = table.create(5)
-local event_queue: { [number]: { any } } = table.create(5)
+local events = table.create(6)
+local event_queue: { [number]: { any } } = table.create(6)
 event_queue[1] = {}
 events[2] = {}
 event_queue[2] = {}
@@ -167,23 +170,63 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 		if id == 1 then
 			local value
 			value = {}
-			local len_1 = buffer.readu16(incoming_buff, read(2))
-			value.Player = buffer.readstring(incoming_buff, read(len_1), len_1)
+			if buffer.readu8(incoming_buff, read(1)) == 1 then
+				local len_1 = buffer.readu16(incoming_buff, read(2))
+				value.Player = buffer.readstring(incoming_buff, read(len_1), len_1)
+			else
+				value.Player = nil
+			end
 			local len_2 = buffer.readu16(incoming_buff, read(2))
 			value.Index = buffer.readstring(incoming_buff, read(len_2), len_2)
 			value.Value = {}
 			local enum_value_1 = buffer.readu8(incoming_buff, read(1))
 			if enum_value_1 == 0 then
-				value.Value.Type = "Mana"
+				value.Value.Type = "Wins"
 				value.Value.Value = buffer.readu32(incoming_buff, read(4))
 			elseif enum_value_1 == 1 then
-				value.Value.Type = "Rebirths"
+				value.Value.Type = "Cash"
 				value.Value.Value = buffer.readu32(incoming_buff, read(4))
 			elseif enum_value_1 == 2 then
-				value.Value.Type = "Aura"
-				value.Value.Value = buffer.readu32(incoming_buff, read(4))
+				value.Value.Type = "PlayedRound"
+				value.Value.Value = buffer.readu8(incoming_buff, read(1)) == 1
 			elseif enum_value_1 == 3 then
-				value.Value.Type = "Training"
+				value.Value.Type = "RoundState"
+				value.Value.Value = {}
+				local len_3 = buffer.readu16(incoming_buff, read(2))
+				value.Value.Value.State = buffer.readstring(incoming_buff, read(len_3), len_3)
+				if buffer.readu8(incoming_buff, read(1)) == 1 then
+					value.Value.Value.Num1 = buffer.readu16(incoming_buff, read(2))
+				else
+					value.Value.Value.Num1 = nil
+				end
+				if buffer.readu8(incoming_buff, read(1)) == 1 then
+					value.Value.Value.Num2 = buffer.readu16(incoming_buff, read(2))
+				else
+					value.Value.Value.Num2 = nil
+				end
+			elseif enum_value_1 == 4 then
+				value.Value.Type = "Winners"
+				value.Value.Value = {}
+				local len_4 = buffer.readu16(incoming_buff, read(2))
+				for i_1 = 1, len_4 do
+					local val_1
+					local len_5 = buffer.readu16(incoming_buff, read(2))
+					val_1 = buffer.readstring(incoming_buff, read(len_5), len_5)
+					value.Value.Value[i_1] = val_1
+				end
+			elseif enum_value_1 == 5 then
+				value.Value.Type = "ShowingTiles"
+				value.Value.Value = {}
+				local len_6 = buffer.readu16(incoming_buff, read(2))
+				for i_2 = 1, len_6 do
+					local val_2
+					incoming_ipos = incoming_ipos + 1
+					val_2 = incoming_inst[incoming_ipos]
+					assert(val_2 ~= nil)
+					value.Value.Value[i_2] = val_2
+				end
+			elseif enum_value_1 == 6 then
+				value.Value.Type = "InRound"
 				value.Value.Value = buffer.readu8(incoming_buff, read(1)) == 1
 			else
 				error("Invalid variant")
@@ -203,20 +246,13 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 			for i_1 = 1, len_1 do
 				local val_1
 				val_1 = {}
-				val_1.Payload = {}
 				local len_2 = buffer.readu16(incoming_buff, read(2))
-				for i_2 = 1, len_2 do
-					local val_2
-					val_2 = {}
-					local len_3 = buffer.readu16(incoming_buff, read(2))
-					val_2.Player = buffer.readstring(incoming_buff, read(len_3), len_3)
-					val_2.Data = {}
-					local len_4 = buffer.readu16(incoming_buff, read(2))
-					val_2.Data.Name = buffer.readstring(incoming_buff, read(len_4), len_4)
-					val_2.Data.Owned = buffer.readu8(incoming_buff, read(1)) == 1
-					val_2.Data.Gifted = buffer.readu8(incoming_buff, read(1)) == 1
-					val_1.Payload[i_2] = val_2
-				end
+				val_1.Player = buffer.readstring(incoming_buff, read(len_2), len_2)
+				val_1.Data = {}
+				local len_3 = buffer.readu16(incoming_buff, read(2))
+				val_1.Data.Name = buffer.readstring(incoming_buff, read(len_3), len_3)
+				val_1.Data.Owned = buffer.readu8(incoming_buff, read(1)) == 1
+				val_1.Data.Gifted = buffer.readu8(incoming_buff, read(1)) == 1
 				value[i_1] = val_1
 			end
 			if events[2][1] then
@@ -256,27 +292,46 @@ local returns = table.freeze({
 			buffer.writeu8(outgoing_buff, outgoing_apos, 4)
 		end,
 	}),
-	RequestReplication = table.freeze({
+	RejoinRound = table.freeze({
 		Fire = function()
 			alloc(1)
 			buffer.writeu8(outgoing_buff, outgoing_apos, 5)
 		end,
 	}),
+	RequestReplication = table.freeze({
+		Fire = function()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+		end,
+	}),
 	PlayerStateUpdate = table.freeze({
 		SetCallback = function(Callback: (({
-			Player: (string),
+			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Mana",
+				Type: "Wins",
 				Value: (number),
 			} | {
-				Type: "Rebirths",
+				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "Aura",
-				Value: (number),
+				Type: "PlayedRound",
+				Value: (boolean),
 			} | {
-				Type: "Training",
+				Type: "RoundState",
+				Value: ({
+					State: (string),
+					Num1: ((number)?),
+					Num2: ((number)?),
+				}),
+			} | {
+				Type: "Winners",
+				Value: ({ (string) }),
+			} | {
+				Type: "ShowingTiles",
+				Value: ({ (Instance) }),
+			} | {
+				Type: "InRound",
 				Value: (boolean),
 			}),
 		})) -> ()): () -> ()
@@ -292,14 +347,12 @@ local returns = table.freeze({
 	}),
 	UpdatePlayerPasses = table.freeze({
 		On = function(Callback: (({ ({
-			Payload: ({ ({
-				Player: (string),
-				Data: ({
-					Name: (string),
-					Owned: (boolean),
-					Gifted: (boolean),
-				}),
-			}) }),
+			Player: (string),
+			Data: ({
+				Name: (string),
+				Owned: (boolean),
+				Gifted: (boolean),
+			}),
 		}) })) -> ())
 			table.insert(events[2], Callback)
 			for _, value in event_queue[2] do

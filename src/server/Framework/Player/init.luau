@@ -1,29 +1,16 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Packages = ReplicatedStorage:WaitForChild("Packages")
+local Types = require(script.Parent.Types)
 local Janitor = require(Packages.Janitor)
 local Vide = require(Packages.Vide)
+local Monetization = require(script.Parent.Monetization)
 local DataModule = require(script.Parent.Data)
 local Leaderstats = require(script.Leaderstats)
 
 local Root = Vide.root
 local Create = Vide.create
-
-export type PlayerObject = {
-    Player: Player,
-    Name: string,
-    Replicating: boolean,
-    Id: number,
-    _Janitor: Janitor.Janitor,
-    Profile: DataModule.Profile,
-    Data: DataModule.Data,
-    Leaderstats: Folder,
-    DeathSignal: {Fire: ({}, {}) -> any},
-    Character: (Model?) -> Model?,
-    GetHumanoid: (self: PlayerObject) -> Humanoid?,
-    AddState: <T>(self: PlayerObject, Name: string, DefaultValue: T) -> ((value: T?) -> T?),
-    LinkLeaderstat: <T>(self: PlayerObject, StateName: string, Convert: (T) -> any, InstanceType: string) -> nil
-}
+export type PlayerObject = Types.PlayerObject
 
 local PlayerClass = {}
 PlayerClass.__index = PlayerClass
@@ -70,9 +57,11 @@ function PlayerClass.new(Player: Player, DefaultStates: {[string]: any}, Leaders
                 DeathSignal:Fire()
             end), "Disconnect", "Died")
         else
-            assert(Profile, `[ENT Framework] Character for {self.Name} was not loaded with a Humanoid.`)
+            assert(Humanoid, `[ENT Framework] Character for {self.Name} was not loaded with a Humanoid.`)
         end
     end), "Disconnect", "CharacterAdded")
+
+    Monetization.CheckPasses(self)
 
     return self
 end
@@ -114,6 +103,14 @@ function PlayerClass:LinkLeaderstat(StateName: string, Convert: (any) -> any, In
             end
         }
     end)
+end
+
+function PlayerClass:HasPass(Name: string): boolean
+    if not self.Data.OwnedGamepasses[Name] then
+        return false
+    end
+
+    return self.Data.OwnedGamepasses[Name].Owned
 end
 
 function PlayerClass:GetHumanoid(): Humanoid?

@@ -11,17 +11,44 @@ local Signal = require(Packages.Signal)
 
 
 return function(Button: Types.Button)
-    local Icon = Button:FindFirstChild("Icon")
+    local Instance = Button.Instance
+    local Icon = Instance:FindFirstChild("Icon")
 
-    Utility.RootedEffect(function(Destructor)
-        local Hovered = Button.Hovered()
+    local Scale = Utility.EnsureUIScale(Instance.Icon)
 
-        if Hovered then
-            Spr.target(Button.Instance.UIScale, 0.6, 4, {Scale = 1})
-        else
-            Spr.target(Button.Instance.UIScale, 0.6, 4, {Scale = 1.3})
+    local Hovered = false
+    local Clicking = false
+    local First = true
+    Vide.effect(function()
+        Hovered = Button.Hovered()
+
+        if First then
+            First = false
+            return
         end
 
-        Animations.GeneralEffects.Shake(Icon)
+        if Clicking then
+            return
+        end
+
+        if Hovered then
+            Spr.target(Scale, 0.6, 4, {Scale = 1.2})
+            Animations.GeneralEffects.Shake(Icon, 4)
+        else
+            Spr.target(Scale, 0.6, 4, {Scale = 1})
+        end
+    end)
+
+    local Debounce = false
+    Button.Clicked:Connect(function()
+        if Debounce then
+            return
+        end
+
+        Clicking = true
+        Spr.target(Scale, 0.6, 4, {Scale = 0.9})
+        task.wait(0.1)
+        Spr.target(Scale, 0.6, 4, {Scale = if Hovered then 1.2 else 1})
+        Clicking = false
     end)
 end

@@ -2,44 +2,30 @@ local ServerStorage = game:GetService("ServerStorage")
 
 local ServerPackages = ServerStorage:WaitForChild("ServerPackages")
 local ProfileService = require(ServerPackages.ProfileService)
+local Types = require(script.Parent.Types)
 
-export type Data = {
-    Mana: number,
-    Rebirths: number,
-    Aura: number,
-    Logins: number,
-    DailyStreak: number,
-    DailyStreakLastAwarded: number,
-    OwnedGamepasses: {},
-    DevProductPurchaseLogs: {}
-}
-
-export type Profile = {
-    Data: Data,
-    AddUserId: (self: Profile, number) -> nil,
-    ListenToRelease: (self: Profile, () -> nil) -> RBXScriptConnection,
-    Reconcile: () -> nil,
-    ListenToHopReady: (self: Profile, () -> nil) -> RBXScriptConnection
-}
+export type Data = Types.Data
+export type Profile = Types.Profile
 
 local Data: {DefaultProfile: Data} = {}
 
 Data.DefaultProfile = {
     Logins = 0,
-    Mana = 0,
-    Aura = 0,
-    Rebirths = 0,
+    Wins = 0,
+    Cash = 0,
     DailyStreak = 1,
     DailyStreakLastAwarded = math.huge,
     OwnedGamepasses = {},
-    DevProductPurchaseLogs = {}
+    DevProductPurchaseLogs = {},
+    Inventory = {Equipped = "Default", Owned = {Default = true}},
+    TutorialCompleted = false
 }
 
 Data.ProfileStore = ProfileService.GetProfileStore("DevDataStore1", Data.DefaultProfile)
 
 function Data:RetrieveProfile(Player: Player, ReleaseCallback: () -> nil): (Profile?, RBXScriptConnection?)
     local Id = Player.UserId
-    local Profile: Profile = Data.ProfileStore:LoadProfileAsync("SimFrameworkDev01_"..Id)
+    local Profile: Profile = Data.ProfileStore:LoadProfileAsync("EatBlocksDev02_"..Id)
 
     if Profile then
         Profile:AddUserId(Id)

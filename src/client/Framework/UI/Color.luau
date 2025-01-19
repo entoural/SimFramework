@@ -17,7 +17,6 @@ end
 function module.RotationToOffset(Rotation: number, Offset: Vector2): Vector2
     local Radians = math.rad(Rotation)
 
-    -- Calculate the rotated offset using the 2D rotation matrix
     local RotatedX = Offset.X * math.cos(Radians) - Offset.Y * math.sin(Radians)
     local RotatedY = Offset.X * math.sin(Radians) + Offset.Y * math.cos(Radians)
 
