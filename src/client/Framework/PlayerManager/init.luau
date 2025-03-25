@@ -24,6 +24,7 @@ module.DeathSignal = Signal.new()
 module.StateAdded = Signal.new()
 module.PlayerAdded = Signal.new()
 module.Players = {[LocalName] = PlayerClass.new(LocalName, module.DeathSignal)} :: {PlayerClass.Player}
+module.LocalObject = module.Players[LocalName] :: PlayerClass.Player
 
 type Method = <T>(self: PlayerClass.Player, ...any) -> T
 export type Player = PlayerClass.Player

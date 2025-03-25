@@ -21,7 +21,7 @@ Manager.PlayerAdded = Signal.new()
 Manager.PlayerLeft = Signal.new()
 
 function Manager:AddState(Name: string, DefaultState: any)
-    self.DefaultStates[Name] = DefaultState
+    self.DefaultStates[Name] = if DefaultState == nil then "nil" else DefaultState
 
     for _, Player in self.PlayerList do
         Player:AddState(Name, DefaultState)
@@ -40,8 +40,8 @@ function Manager:AddMethod(Name: string, Method: (Player: PlayerClass.PlayerObje
     PlayerClass[Name] = Method
 end
 
-function Manager:AddPlayer(Player: Player)
-    local NewPlayer = PlayerClass.new(Player, self.DefaultStates, self.LeaderstatLinks, self.Death)
+function Manager:AddPlayer(Player: Player, Destructor: () -> ())
+    local NewPlayer = PlayerClass.new(Player, self.DefaultStates, self.LeaderstatLinks, self.Death, nil, Destructor)
     self.PlayerList[Player] = NewPlayer
 
     SharedUtility.RootedEffect(function()
@@ -95,8 +95,8 @@ function Manager:Begin()
         end)
     end)
     for _, Player in Players:GetPlayers() do
-        Root(function()
-            self:AddPlayer(Player)
+        Root(function(Destructor: () -> ())
+            self:AddPlayer(Player, Destructor)
         end)
     end
 
@@ -104,7 +104,7 @@ function Manager:Begin()
         local Object = self.PlayerList[Player]
         assert(Object)
 
-        self.PlayerLeft:Fire()
+        self.PlayerLeft:Fire(Object)
         Object:Destroy()
         self.PlayerList[Player] = nil
     end)

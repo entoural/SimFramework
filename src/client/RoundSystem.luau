@@ -121,10 +121,10 @@ return function(InRound: Vide.Source<boolean>)
     end)
 
     Vide.effect(function()
-        print("Updating")
         IsInRound = InRound()
-        print(IsInRound)
         Info.Visible = IsInRound
         ColorInfo.Visible = IsInRound
     end)
+
+    return RoundState
 end

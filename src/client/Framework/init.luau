@@ -7,6 +7,9 @@ local Framework = {}
 Framework.Network = require(script.Network)
 Framework.ZoneTools = require(script.ZoneTools)
 Framework.Monetization = require(script.Monetization)
+Framework.Camera = require(script.Camera)
+Framework.ModelTools = require(script.ModelTools)
+Framework.Headshots = require(script.Headshots)
 Framework.PlayerManager = require(script.PlayerManager)
 Framework.UI = require(script.UI)
 

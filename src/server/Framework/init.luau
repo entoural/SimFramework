@@ -10,6 +10,7 @@ local Network = require(script.Network)
 local Data = require(script.Data)
 local Replication = require(script.Replication)
 local PlayerClass = require(script.Player)
+local Types = require(script.Types)
 local Utility = require(script.Utility)
 local OctreeManager = require(script.OctreeManager)
 local PlayerManager = require(script.PlayerManager)
@@ -21,6 +22,7 @@ Framework.PlayerManager = PlayerManager
 Framework.OctreeManager = OctreeManager
 Framework.Replication = Replication
 Framework.Network = Network
+Framework.Types = Types
 Framework.GeneralSetup = GeneralSetup
 
 export type PlayerObject = PlayerClass.PlayerObject

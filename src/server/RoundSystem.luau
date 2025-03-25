@@ -91,12 +91,19 @@ function RoundSystem.RandomTileSet()
 	end
 end
 
+function RoundSystem.GetRandomSpawnPosition(Player: Player)
+	local YSize = Player.Character:GetExtentsSize().Y / 2
+	local RanX, RanZ = math.random(MinSpawnX, MaxSpawnX), math.random(MinSpawnZ, MaxSpawnZ)
+	return Vector3.new(RanX, SpawnY + YSize, RanZ)
+end
+
 function RoundSystem:BeginRound(PlayerWon: (Player, Placement: number) -> ())
     local Completed = false
 
     local RoundJanitor = self.Janitor
     local CurrentState = RoundSystem.CurrentState
-    local RemainingPlayers: {Framework.PlayerObject} = {}
+    RoundSystem.RemainingPlayers = {} :: {Framework.PlayerObject}
+	local RemainingPlayers = RoundSystem.RemainingPlayers
     local Won = 0
 
     self.Winners({})
@@ -116,9 +123,7 @@ function RoundSystem:BeginRound(PlayerWon: (Player, Placement: number) -> ())
 			table.insert(RemainingPlayers, Object)
             Object.InRound(true)
 
-			local YSize = Player.Character:GetExtentsSize().Y / 2
-			local RanX, RanZ = math.random(MinSpawnX, MaxSpawnX), math.random(MinSpawnZ, MaxSpawnZ)
-			Player.Character.PrimaryPart.Position = Vector3.new(RanX, SpawnY + YSize, RanZ)
+			Player.Character.PrimaryPart.Position = RoundSystem.GetRandomSpawnPosition(Player)
 		end
 	end
 

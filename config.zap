@@ -9,17 +9,15 @@ event PlayerStateUpdate = {
         Player: string?,
         Index: string,
         Value: enum "Type" {
-            Wins {Value: u32},
+            Rebirths {Value: u32},
             Cash {Value: u32},
-            PlayedRound {Value: boolean},
-            RoundState {Value: struct {
-                State: string,
-                Num1: u16?,
-                Num2: u16?
-            }},
-            Winners {Value: string[]},
-            ShowingTiles {Value: Instance[]},
-            InRound {Value: boolean}
+            Boost {Value: u32},
+            RecordScore {Value: u32},
+            Floors {Value: u16},
+            RocketLevel {Value: u8},
+            Rocket {Value: string},
+            BuildingModel {Value: Instance (Model)?},
+            InLaunch {Value: boolean}
         }
     }
 }
@@ -45,16 +43,79 @@ event PlayerLeft = {
     data: string
 }
 
+event StatEffect = {
+    from: Server,
+	type: Reliable,
+	call: ManyAsync,
+    data: struct {
+        Stat: string,
+        Amount: u8
+    }
+}
+
 event RequestData = {
 	from: Client,
 	type: Reliable,
 	call: SingleAsync
 }
 
+event ChangeFloors = {
+	from: Client,
+	type: Reliable,
+	call: ManyAsync,
+    data: u16
+}
+
 event RejoinRound = {
 	from: Client,
 	type: Reliable,
 	call: SingleAsync
+}
+
+event LaunchPlayer = {
+    from: Server,
+	type: Reliable,
+	call: ManyAsync,
+    data: struct {
+        LaunchData: struct {
+            MaxHeightIncrease: f32,
+            Gravity: f32,
+            HorizontalSpeed: f32,
+            SpeedMultiplier: f32
+        },
+        Accuracy: f32
+    }
+}
+
+event RequestLaunch = {
+    from: Client,
+	type: Reliable,
+	call: ManyAsync,
+    data: f32(..1)
+}
+
+event UpgradeLevel = {
+    from: Client,
+	type: Reliable,
+	call: ManyAsync
+}
+
+event Rebirth = {
+    from: Client,
+	type: Reliable,
+	call: ManyAsync
+}
+
+event BuyNextRocket = {
+    from: Client,
+	type: Reliable,
+	call: ManyAsync
+}
+
+event BuyNextFloor = {
+    from: Client,
+	type: Reliable,
+	call: ManyAsync
 }
 
 event RequestReplication = {

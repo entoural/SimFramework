@@ -40,4 +40,10 @@ function module.CheckPasses(Player: Types.PlayerObject)
     end
 end
 
+function module.HandleReceipt()
+    
+end
+
+MarketplaceService.ProcessReceipt = module.HandleReceipt
+
 return module

@@ -11,8 +11,13 @@ local Data: {DefaultProfile: Data} = {}
 
 Data.DefaultProfile = {
     Logins = 0,
-    Wins = 0,
+    Rebirths = 0,
     Cash = 0,
+    Floors = 1,
+    Rocket = "Beginner",
+    RocketLevel = 1,
+    Boost = 1,
+    RecordScore = 0,
     DailyStreak = 1,
     DailyStreakLastAwarded = math.huge,
     OwnedGamepasses = {},
@@ -21,11 +26,11 @@ Data.DefaultProfile = {
     TutorialCompleted = false
 }
 
-Data.ProfileStore = ProfileService.GetProfileStore("DevDataStore1", Data.DefaultProfile)
+Data.ProfileStore = ProfileService.GetProfileStore("DevDataStoreA33", Data.DefaultProfile)
 
 function Data:RetrieveProfile(Player: Player, ReleaseCallback: () -> nil): (Profile?, RBXScriptConnection?)
     local Id = Player.UserId
-    local Profile: Profile = Data.ProfileStore:LoadProfileAsync("EatBlocksDev02_"..Id)
+    local Profile: Profile = Data.ProfileStore:LoadProfileAsync("RocketGameBetaDS11"..Id)
 
     if Profile then
         Profile:AddUserId(Id)

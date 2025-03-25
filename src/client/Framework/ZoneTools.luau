@@ -9,7 +9,7 @@ local module = {}
 module.Zones = {}
 
 function module.LinkPartToCallback(Part: BasePart, Callback: () -> ())
-    local Zone = ZonePlus.new(Part)
+    local Zone = module.Zones[Part] or ZonePlus.new(Part)
     module.Zones[Part] = Zone
 
     Zone.playerEntered:Connect(function(Entered: Player)
@@ -19,6 +19,33 @@ function module.LinkPartToCallback(Part: BasePart, Callback: () -> ())
 
         Callback()
     end)
+
+    return Zone
+end
+
+function module.LinkPartToFrame(Part: BasePart, Frame: GuiObject, CustomToggledBehavior: ((Toggled: boolean?) -> ())?)
+    local Zone = module.Zones[Part] or ZonePlus.new(Part)
+    module.Zones[Part] = Zone
+
+    Zone.playerEntered:Connect(function(Entered: Player)
+        if Entered == Player then
+            Frame.Visible = true
+            if CustomToggledBehavior then
+                CustomToggledBehavior(true)
+            end
+        end
+    end)
+
+    Zone.playerExited:Connect(function(Entered: Player)
+        if Entered == Player then
+            if CustomToggledBehavior then
+                CustomToggledBehavior(false)
+            end
+            Frame.Visible = false
+        end
+    end)
+
+    return Zone
 end
 
 return module

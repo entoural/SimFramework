@@ -127,11 +127,43 @@ if not RunService:IsRunning() then
 			FireList = noop,
 			FireSet = noop
 		}),
+		StatEffect = table.freeze({
+			Fire = noop,
+			FireAll = noop,
+			FireExcept = noop,
+			FireList = noop,
+			FireSet = noop
+		}),
 		RequestData = table.freeze({
 			SetCallback = noop
 		}),
+		ChangeFloors = table.freeze({
+			On = noop
+		}),
 		RejoinRound = table.freeze({
 			SetCallback = noop
+		}),
+		LaunchPlayer = table.freeze({
+			Fire = noop,
+			FireAll = noop,
+			FireExcept = noop,
+			FireList = noop,
+			FireSet = noop
+		}),
+		RequestLaunch = table.freeze({
+			On = noop
+		}),
+		UpgradeLevel = table.freeze({
+			On = noop
+		}),
+		Rebirth = table.freeze({
+			On = noop
+		}),
+		BuyNextRocket = table.freeze({
+			On = noop
+		}),
+		BuyNextFloor = table.freeze({
+			On = noop
 		}),
 		RequestReplication = table.freeze({
 			SetCallback = noop
@@ -188,7 +220,13 @@ end
 
 RunService.Heartbeat:Connect(SendEvents)
 
-local events = table.create(6)
+local events = table.create(14)
+events[6] = {}
+events[9] = {}
+events[10] = {}
+events[11] = {}
+events[12] = {}
+events[13] = {}
 reliable.OnServerEvent:Connect(function(player, buff, inst)
 	incoming_buff = buff
 	incoming_inst = inst
@@ -197,20 +235,53 @@ reliable.OnServerEvent:Connect(function(player, buff, inst)
 	local len = buffer.len(buff)
 	while incoming_read < len do
 		local id = buffer.readu8(buff, read(1))
-		if id == 4 then
-			local value
-			if events[4] then
-				task.spawn(events[4], player, value)
-			end
-		elseif id == 5 then
+		if id == 5 then
 			local value
 			if events[5] then
 				task.spawn(events[5], player, value)
 			end
 		elseif id == 6 then
 			local value
-			if events[6] then
-				task.spawn(events[6], player, value)
+			value = buffer.readu16(incoming_buff, read(2))
+			for _, cb in events[6] do
+				task.spawn(cb, player, value)
+			end
+		elseif id == 7 then
+			local value
+			if events[7] then
+				task.spawn(events[7], player, value)
+			end
+		elseif id == 9 then
+			local value
+			value = buffer.readf32(incoming_buff, read(4))
+			assert(value <= 1)
+			for _, cb in events[9] do
+				task.spawn(cb, player, value)
+			end
+		elseif id == 10 then
+			local value
+			for _, cb in events[10] do
+				task.spawn(cb, player, value)
+			end
+		elseif id == 11 then
+			local value
+			for _, cb in events[11] do
+				task.spawn(cb, player, value)
+			end
+		elseif id == 12 then
+			local value
+			for _, cb in events[12] do
+				task.spawn(cb, player, value)
+			end
+		elseif id == 13 then
+			local value
+			for _, cb in events[13] do
+				task.spawn(cb, player, value)
+			end
+		elseif id == 14 then
+			local value
+			if events[14] then
+				task.spawn(events[14], player, value)
 			end
 		else
 			error("Unknown event id")
@@ -224,29 +295,31 @@ local returns = table.freeze({
 			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Wins",
+				Type: "Rebirths",
 				Value: (number),
 			} | {
 				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "PlayedRound",
-				Value: (boolean),
+				Type: "Boost",
+				Value: (number),
 			} | {
-				Type: "RoundState",
-				Value: ({
-					State: (string),
-					Num1: ((number)?),
-					Num2: ((number)?),
-				}),
+				Type: "RecordScore",
+				Value: (number),
 			} | {
-				Type: "Winners",
-				Value: ({ (string) }),
+				Type: "Floors",
+				Value: (number),
 			} | {
-				Type: "ShowingTiles",
-				Value: ({ (Instance) }),
+				Type: "RocketLevel",
+				Value: (number),
 			} | {
-				Type: "InRound",
+				Type: "Rocket",
+				Value: (string),
+			} | {
+				Type: "BuildingModel",
+				Value: ((Model)?),
+			} | {
+				Type: "InLaunch",
 				Value: (boolean),
 			}),
 		}))
@@ -270,7 +343,7 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Wins" then
+			if Value.Value.Type == "Rebirths" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
@@ -280,64 +353,49 @@ local returns = table.freeze({
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "PlayedRound" then
+			elseif Value.Value.Type == "Boost" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
-			elseif Value.Value.Type == "RoundState" then
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "RecordScore" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
-				local len_3 = #Value.Value.Value.State
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Floors" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "RocketLevel" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Rocket" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+				local len_3 = #Value.Value.Value
 				alloc(2)
 				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
 				alloc(len_3)
-				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value.State, len_3)
-				if Value.Value.Value.Num1 == nil then
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value, len_3)
+			elseif Value.Value.Type == "BuildingModel" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 7)
+				if Value.Value.Value == nil then
 					alloc(1)
 					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				else
 					alloc(1)
 					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num1)
+					assert(Value.Value.Value:IsA("Model"))
+					table.insert(outgoing_inst, Value.Value.Value)
 				end
-				if Value.Value.Value.Num2 == nil then
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
-				else
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num2)
-				end
-			elseif Value.Value.Type == "Winners" then
+			elseif Value.Value.Type == "InLaunch" then
 				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
-				local len_4 = #Value.Value.Value
-				alloc(2)
-				buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
-				for i_1 = 1, len_4 do
-					local val_1 = Value.Value.Value[i_1]
-					local len_5 = #val_1
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_5)
-					alloc(len_5)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_1, len_5)
-				end
-			elseif Value.Value.Type == "ShowingTiles" then
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
-				local len_6 = #Value.Value.Value
-				alloc(2)
-				buffer.writeu16(outgoing_buff, outgoing_apos, len_6)
-				for i_2 = 1, len_6 do
-					local val_2 = Value.Value.Value[i_2]
-					table.insert(outgoing_inst, val_2)
-				end
-			elseif Value.Value.Type == "InRound" then
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 8)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -349,29 +407,31 @@ local returns = table.freeze({
 			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Wins",
+				Type: "Rebirths",
 				Value: (number),
 			} | {
 				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "PlayedRound",
-				Value: (boolean),
+				Type: "Boost",
+				Value: (number),
 			} | {
-				Type: "RoundState",
-				Value: ({
-					State: (string),
-					Num1: ((number)?),
-					Num2: ((number)?),
-				}),
+				Type: "RecordScore",
+				Value: (number),
 			} | {
-				Type: "Winners",
-				Value: ({ (string) }),
+				Type: "Floors",
+				Value: (number),
 			} | {
-				Type: "ShowingTiles",
-				Value: ({ (Instance) }),
+				Type: "RocketLevel",
+				Value: (number),
 			} | {
-				Type: "InRound",
+				Type: "Rocket",
+				Value: (string),
+			} | {
+				Type: "BuildingModel",
+				Value: ((Model)?),
+			} | {
+				Type: "InLaunch",
 				Value: (boolean),
 			}),
 		}))
@@ -395,7 +455,7 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Wins" then
+			if Value.Value.Type == "Rebirths" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
@@ -405,64 +465,49 @@ local returns = table.freeze({
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "PlayedRound" then
+			elseif Value.Value.Type == "Boost" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
-			elseif Value.Value.Type == "RoundState" then
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "RecordScore" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
-				local len_3 = #Value.Value.Value.State
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Floors" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "RocketLevel" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Rocket" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+				local len_3 = #Value.Value.Value
 				alloc(2)
 				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
 				alloc(len_3)
-				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value.State, len_3)
-				if Value.Value.Value.Num1 == nil then
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value, len_3)
+			elseif Value.Value.Type == "BuildingModel" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 7)
+				if Value.Value.Value == nil then
 					alloc(1)
 					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				else
 					alloc(1)
 					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num1)
+					assert(Value.Value.Value:IsA("Model"))
+					table.insert(outgoing_inst, Value.Value.Value)
 				end
-				if Value.Value.Value.Num2 == nil then
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
-				else
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num2)
-				end
-			elseif Value.Value.Type == "Winners" then
+			elseif Value.Value.Type == "InLaunch" then
 				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
-				local len_4 = #Value.Value.Value
-				alloc(2)
-				buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
-				for i_1 = 1, len_4 do
-					local val_1 = Value.Value.Value[i_1]
-					local len_5 = #val_1
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_5)
-					alloc(len_5)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_1, len_5)
-				end
-			elseif Value.Value.Type == "ShowingTiles" then
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
-				local len_6 = #Value.Value.Value
-				alloc(2)
-				buffer.writeu16(outgoing_buff, outgoing_apos, len_6)
-				for i_2 = 1, len_6 do
-					local val_2 = Value.Value.Value[i_2]
-					table.insert(outgoing_inst, val_2)
-				end
-			elseif Value.Value.Type == "InRound" then
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 8)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -481,29 +526,31 @@ local returns = table.freeze({
 			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Wins",
+				Type: "Rebirths",
 				Value: (number),
 			} | {
 				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "PlayedRound",
-				Value: (boolean),
+				Type: "Boost",
+				Value: (number),
 			} | {
-				Type: "RoundState",
-				Value: ({
-					State: (string),
-					Num1: ((number)?),
-					Num2: ((number)?),
-				}),
+				Type: "RecordScore",
+				Value: (number),
 			} | {
-				Type: "Winners",
-				Value: ({ (string) }),
+				Type: "Floors",
+				Value: (number),
 			} | {
-				Type: "ShowingTiles",
-				Value: ({ (Instance) }),
+				Type: "RocketLevel",
+				Value: (number),
 			} | {
-				Type: "InRound",
+				Type: "Rocket",
+				Value: (string),
+			} | {
+				Type: "BuildingModel",
+				Value: ((Model)?),
+			} | {
+				Type: "InLaunch",
 				Value: (boolean),
 			}),
 		}))
@@ -527,7 +574,7 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Wins" then
+			if Value.Value.Type == "Rebirths" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
@@ -537,64 +584,49 @@ local returns = table.freeze({
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "PlayedRound" then
+			elseif Value.Value.Type == "Boost" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
-			elseif Value.Value.Type == "RoundState" then
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "RecordScore" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
-				local len_3 = #Value.Value.Value.State
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Floors" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "RocketLevel" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Rocket" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+				local len_3 = #Value.Value.Value
 				alloc(2)
 				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
 				alloc(len_3)
-				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value.State, len_3)
-				if Value.Value.Value.Num1 == nil then
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value, len_3)
+			elseif Value.Value.Type == "BuildingModel" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 7)
+				if Value.Value.Value == nil then
 					alloc(1)
 					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				else
 					alloc(1)
 					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num1)
+					assert(Value.Value.Value:IsA("Model"))
+					table.insert(outgoing_inst, Value.Value.Value)
 				end
-				if Value.Value.Value.Num2 == nil then
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
-				else
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num2)
-				end
-			elseif Value.Value.Type == "Winners" then
+			elseif Value.Value.Type == "InLaunch" then
 				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
-				local len_4 = #Value.Value.Value
-				alloc(2)
-				buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
-				for i_1 = 1, len_4 do
-					local val_1 = Value.Value.Value[i_1]
-					local len_5 = #val_1
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_5)
-					alloc(len_5)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_1, len_5)
-				end
-			elseif Value.Value.Type == "ShowingTiles" then
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
-				local len_6 = #Value.Value.Value
-				alloc(2)
-				buffer.writeu16(outgoing_buff, outgoing_apos, len_6)
-				for i_2 = 1, len_6 do
-					local val_2 = Value.Value.Value[i_2]
-					table.insert(outgoing_inst, val_2)
-				end
-			elseif Value.Value.Type == "InRound" then
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 8)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -615,29 +647,31 @@ local returns = table.freeze({
 			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Wins",
+				Type: "Rebirths",
 				Value: (number),
 			} | {
 				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "PlayedRound",
-				Value: (boolean),
+				Type: "Boost",
+				Value: (number),
 			} | {
-				Type: "RoundState",
-				Value: ({
-					State: (string),
-					Num1: ((number)?),
-					Num2: ((number)?),
-				}),
+				Type: "RecordScore",
+				Value: (number),
 			} | {
-				Type: "Winners",
-				Value: ({ (string) }),
+				Type: "Floors",
+				Value: (number),
 			} | {
-				Type: "ShowingTiles",
-				Value: ({ (Instance) }),
+				Type: "RocketLevel",
+				Value: (number),
 			} | {
-				Type: "InRound",
+				Type: "Rocket",
+				Value: (string),
+			} | {
+				Type: "BuildingModel",
+				Value: ((Model)?),
+			} | {
+				Type: "InLaunch",
 				Value: (boolean),
 			}),
 		}))
@@ -661,7 +695,7 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Wins" then
+			if Value.Value.Type == "Rebirths" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
@@ -671,64 +705,49 @@ local returns = table.freeze({
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "PlayedRound" then
+			elseif Value.Value.Type == "Boost" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
-			elseif Value.Value.Type == "RoundState" then
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "RecordScore" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
-				local len_3 = #Value.Value.Value.State
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Floors" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "RocketLevel" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Rocket" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+				local len_3 = #Value.Value.Value
 				alloc(2)
 				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
 				alloc(len_3)
-				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value.State, len_3)
-				if Value.Value.Value.Num1 == nil then
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value, len_3)
+			elseif Value.Value.Type == "BuildingModel" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 7)
+				if Value.Value.Value == nil then
 					alloc(1)
 					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				else
 					alloc(1)
 					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num1)
+					assert(Value.Value.Value:IsA("Model"))
+					table.insert(outgoing_inst, Value.Value.Value)
 				end
-				if Value.Value.Value.Num2 == nil then
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
-				else
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num2)
-				end
-			elseif Value.Value.Type == "Winners" then
+			elseif Value.Value.Type == "InLaunch" then
 				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
-				local len_4 = #Value.Value.Value
-				alloc(2)
-				buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
-				for i_1 = 1, len_4 do
-					local val_1 = Value.Value.Value[i_1]
-					local len_5 = #val_1
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_5)
-					alloc(len_5)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_1, len_5)
-				end
-			elseif Value.Value.Type == "ShowingTiles" then
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
-				local len_6 = #Value.Value.Value
-				alloc(2)
-				buffer.writeu16(outgoing_buff, outgoing_apos, len_6)
-				for i_2 = 1, len_6 do
-					local val_2 = Value.Value.Value[i_2]
-					table.insert(outgoing_inst, val_2)
-				end
-			elseif Value.Value.Type == "InRound" then
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 8)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -747,29 +766,31 @@ local returns = table.freeze({
 			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Wins",
+				Type: "Rebirths",
 				Value: (number),
 			} | {
 				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "PlayedRound",
-				Value: (boolean),
+				Type: "Boost",
+				Value: (number),
 			} | {
-				Type: "RoundState",
-				Value: ({
-					State: (string),
-					Num1: ((number)?),
-					Num2: ((number)?),
-				}),
+				Type: "RecordScore",
+				Value: (number),
 			} | {
-				Type: "Winners",
-				Value: ({ (string) }),
+				Type: "Floors",
+				Value: (number),
 			} | {
-				Type: "ShowingTiles",
-				Value: ({ (Instance) }),
+				Type: "RocketLevel",
+				Value: (number),
 			} | {
-				Type: "InRound",
+				Type: "Rocket",
+				Value: (string),
+			} | {
+				Type: "BuildingModel",
+				Value: ((Model)?),
+			} | {
+				Type: "InLaunch",
 				Value: (boolean),
 			}),
 		}))
@@ -793,7 +814,7 @@ local returns = table.freeze({
 			buffer.writeu16(outgoing_buff, outgoing_apos, len_2)
 			alloc(len_2)
 			buffer.writestring(outgoing_buff, outgoing_apos, Value.Index, len_2)
-			if Value.Value.Type == "Wins" then
+			if Value.Value.Type == "Rebirths" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				alloc(4)
@@ -803,64 +824,49 @@ local returns = table.freeze({
 				buffer.writeu8(outgoing_buff, outgoing_apos, 1)
 				alloc(4)
 				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
-			elseif Value.Value.Type == "PlayedRound" then
+			elseif Value.Value.Type == "Boost" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 2)
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
-			elseif Value.Value.Type == "RoundState" then
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "RecordScore" then
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, 3)
-				local len_3 = #Value.Value.Value.State
+				alloc(4)
+				buffer.writeu32(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Floors" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+				alloc(2)
+				buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "RocketLevel" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value)
+			elseif Value.Value.Type == "Rocket" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+				local len_3 = #Value.Value.Value
 				alloc(2)
 				buffer.writeu16(outgoing_buff, outgoing_apos, len_3)
 				alloc(len_3)
-				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value.State, len_3)
-				if Value.Value.Value.Num1 == nil then
+				buffer.writestring(outgoing_buff, outgoing_apos, Value.Value.Value, len_3)
+			elseif Value.Value.Type == "BuildingModel" then
+				alloc(1)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 7)
+				if Value.Value.Value == nil then
 					alloc(1)
 					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
 				else
 					alloc(1)
 					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num1)
+					assert(Value.Value.Value:IsA("Model"))
+					table.insert(outgoing_inst, Value.Value.Value)
 				end
-				if Value.Value.Value.Num2 == nil then
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, 0)
-				else
-					alloc(1)
-					buffer.writeu8(outgoing_buff, outgoing_apos, 1)
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, Value.Value.Value.Num2)
-				end
-			elseif Value.Value.Type == "Winners" then
+			elseif Value.Value.Type == "InLaunch" then
 				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 4)
-				local len_4 = #Value.Value.Value
-				alloc(2)
-				buffer.writeu16(outgoing_buff, outgoing_apos, len_4)
-				for i_1 = 1, len_4 do
-					local val_1 = Value.Value.Value[i_1]
-					local len_5 = #val_1
-					alloc(2)
-					buffer.writeu16(outgoing_buff, outgoing_apos, len_5)
-					alloc(len_5)
-					buffer.writestring(outgoing_buff, outgoing_apos, val_1, len_5)
-				end
-			elseif Value.Value.Type == "ShowingTiles" then
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 5)
-				local len_6 = #Value.Value.Value
-				alloc(2)
-				buffer.writeu16(outgoing_buff, outgoing_apos, len_6)
-				for i_2 = 1, len_6 do
-					local val_2 = Value.Value.Value[i_2]
-					table.insert(outgoing_inst, val_2)
-				end
-			elseif Value.Value.Type == "InRound" then
-				alloc(1)
-				buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+				buffer.writeu8(outgoing_buff, outgoing_apos, 8)
 				alloc(1)
 				buffer.writeu8(outgoing_buff, outgoing_apos, Value.Value.Value and 1 or 0)
 			else
@@ -1160,15 +1166,271 @@ local returns = table.freeze({
 			end
 		end,
 	}),
-	RequestData = table.freeze({
-		SetCallback = function(Callback: (Player) -> ()): () -> ()
-			events[4] = Callback
-			return function()
-				events[4] = nil
+	StatEffect = table.freeze({
+		Fire = function(Player: Player, Value: ({
+			Stat: (string),
+			Amount: (number),
+		}))
+			load_player(Player)
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+			local len_1 = #Value.Stat
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			alloc(len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Stat, len_1)
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, Value.Amount)
+			player_map[Player] = save()
+		end,
+		FireAll = function(Value: ({
+			Stat: (string),
+			Amount: (number),
+		}))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+			local len_1 = #Value.Stat
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			alloc(len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Stat, len_1)
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, Value.Amount)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in Players:GetPlayers() do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
+			end
+		end,
+		FireExcept = function(Except: Player, Value: ({
+			Stat: (string),
+			Amount: (number),
+		}))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+			local len_1 = #Value.Stat
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			alloc(len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Stat, len_1)
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, Value.Amount)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in Players:GetPlayers() do
+				if player ~= Except then
+					load_player(player)
+					alloc(used)
+					buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+					table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+					player_map[player] = save()
+				end
+			end
+		end,
+		FireList = function(List: { Player }, Value: ({
+			Stat: (string),
+			Amount: (number),
+		}))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+			local len_1 = #Value.Stat
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			alloc(len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Stat, len_1)
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, Value.Amount)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in List do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
+			end
+		end,
+		FireSet = function(Set: { [Player]: true }, Value: ({
+			Stat: (string),
+			Amount: (number),
+		}))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+			local len_1 = #Value.Stat
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, len_1)
+			alloc(len_1)
+			buffer.writestring(outgoing_buff, outgoing_apos, Value.Stat, len_1)
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, Value.Amount)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for player in Set do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
 			end
 		end,
 	}),
-	RejoinRound = table.freeze({
+	LaunchPlayer = table.freeze({
+		Fire = function(Player: Player, Value: ({
+			LaunchData: ({
+				MaxHeightIncrease: (number),
+				Gravity: (number),
+				HorizontalSpeed: (number),
+				SpeedMultiplier: (number),
+			}),
+			Accuracy: (number),
+		}))
+			load_player(Player)
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 8)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.MaxHeightIncrease)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.Gravity)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.HorizontalSpeed)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.SpeedMultiplier)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.Accuracy)
+			player_map[Player] = save()
+		end,
+		FireAll = function(Value: ({
+			LaunchData: ({
+				MaxHeightIncrease: (number),
+				Gravity: (number),
+				HorizontalSpeed: (number),
+				SpeedMultiplier: (number),
+			}),
+			Accuracy: (number),
+		}))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 8)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.MaxHeightIncrease)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.Gravity)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.HorizontalSpeed)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.SpeedMultiplier)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.Accuracy)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in Players:GetPlayers() do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
+			end
+		end,
+		FireExcept = function(Except: Player, Value: ({
+			LaunchData: ({
+				MaxHeightIncrease: (number),
+				Gravity: (number),
+				HorizontalSpeed: (number),
+				SpeedMultiplier: (number),
+			}),
+			Accuracy: (number),
+		}))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 8)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.MaxHeightIncrease)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.Gravity)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.HorizontalSpeed)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.SpeedMultiplier)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.Accuracy)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in Players:GetPlayers() do
+				if player ~= Except then
+					load_player(player)
+					alloc(used)
+					buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+					table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+					player_map[player] = save()
+				end
+			end
+		end,
+		FireList = function(List: { Player }, Value: ({
+			LaunchData: ({
+				MaxHeightIncrease: (number),
+				Gravity: (number),
+				HorizontalSpeed: (number),
+				SpeedMultiplier: (number),
+			}),
+			Accuracy: (number),
+		}))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 8)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.MaxHeightIncrease)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.Gravity)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.HorizontalSpeed)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.SpeedMultiplier)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.Accuracy)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for _, player in List do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
+			end
+		end,
+		FireSet = function(Set: { [Player]: true }, Value: ({
+			LaunchData: ({
+				MaxHeightIncrease: (number),
+				Gravity: (number),
+				HorizontalSpeed: (number),
+				SpeedMultiplier: (number),
+			}),
+			Accuracy: (number),
+		}))
+			load_empty()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 8)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.MaxHeightIncrease)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.Gravity)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.HorizontalSpeed)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.LaunchData.SpeedMultiplier)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value.Accuracy)
+			local buff, used, inst = outgoing_buff, outgoing_used, outgoing_inst
+			for player in Set do
+				load_player(player)
+				alloc(used)
+				buffer.copy(outgoing_buff, outgoing_apos, buff, 0, used)
+				table.move(inst, 1, #inst, #outgoing_inst + 1, outgoing_inst)
+				player_map[player] = save()
+			end
+		end,
+	}),
+	RequestData = table.freeze({
 		SetCallback = function(Callback: (Player) -> ()): () -> ()
 			events[5] = Callback
 			return function()
@@ -1176,11 +1438,67 @@ local returns = table.freeze({
 			end
 		end,
 	}),
+	ChangeFloors = table.freeze({
+		On = function(Callback: (Player, (number)) -> ()): () -> ()
+			table.insert(events[6], Callback)
+			return function()
+				table.remove(events[6], table.find(events[6], Callback))
+			end
+		end,
+	}),
+	RejoinRound = table.freeze({
+		SetCallback = function(Callback: (Player) -> ()): () -> ()
+			events[7] = Callback
+			return function()
+				events[7] = nil
+			end
+		end,
+	}),
+	RequestLaunch = table.freeze({
+		On = function(Callback: (Player, (number)) -> ()): () -> ()
+			table.insert(events[9], Callback)
+			return function()
+				table.remove(events[9], table.find(events[9], Callback))
+			end
+		end,
+	}),
+	UpgradeLevel = table.freeze({
+		On = function(Callback: (Player) -> ()): () -> ()
+			table.insert(events[10], Callback)
+			return function()
+				table.remove(events[10], table.find(events[10], Callback))
+			end
+		end,
+	}),
+	Rebirth = table.freeze({
+		On = function(Callback: (Player) -> ()): () -> ()
+			table.insert(events[11], Callback)
+			return function()
+				table.remove(events[11], table.find(events[11], Callback))
+			end
+		end,
+	}),
+	BuyNextRocket = table.freeze({
+		On = function(Callback: (Player) -> ()): () -> ()
+			table.insert(events[12], Callback)
+			return function()
+				table.remove(events[12], table.find(events[12], Callback))
+			end
+		end,
+	}),
+	BuyNextFloor = table.freeze({
+		On = function(Callback: (Player) -> ()): () -> ()
+			table.insert(events[13], Callback)
+			return function()
+				table.remove(events[13], table.find(events[13], Callback))
+			end
+		end,
+	}),
 	RequestReplication = table.freeze({
 		SetCallback = function(Callback: (Player) -> ()): () -> ()
-			events[6] = Callback
+			events[14] = Callback
 			return function()
-				events[6] = nil
+				events[14] = nil
 			end
 		end,
 	}),

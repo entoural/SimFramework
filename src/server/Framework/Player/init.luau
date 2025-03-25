@@ -15,7 +15,7 @@ export type PlayerObject = Types.PlayerObject
 local PlayerClass = {}
 PlayerClass.__index = PlayerClass
 
-function PlayerClass.new(Player: Player, DefaultStates: {[string]: any}, LeaderstatLinks: Leaderstats.LeaderstatLinks, DeathSignal: {Fire: ({}, {}) -> any}, ReleaseCallback: () -> nil): PlayerObject
+function PlayerClass.new(Player: Player, DefaultStates: {[string]: any}, LeaderstatLinks: Leaderstats.LeaderstatLinks, DeathSignal: {Fire: ({}, {}) -> any}, ReleaseCallback: () -> nil, Destructor: () -> ()): PlayerObject
     local self = setmetatable({}, PlayerClass)
     self._Janitor = Janitor.new()
 
@@ -23,6 +23,7 @@ function PlayerClass.new(Player: Player, DefaultStates: {[string]: any}, Leaders
     self.Name = Player.Name
     self.Id = Player.UserId
     self.Replicating = false
+    self.Destructor = Destructor
     self.DeathSignal = DeathSignal
 
     local Profile, Listener = DataModule:RetrieveProfile(Player, ReleaseCallback)
@@ -36,7 +37,7 @@ function PlayerClass.new(Player: Player, DefaultStates: {[string]: any}, Leaders
     self.CharacterJanitor = Janitor.new()
 
     for Name, DefaultValue in DefaultStates do
-        self:AddState(Name, DefaultValue)
+        self:AddState(Name, if DefaultValue == "nil" then nil else DefaultValue)
     end
 
     self.Leaderstats = Leaderstats(LeaderstatLinks, self)
@@ -55,6 +56,7 @@ function PlayerClass.new(Player: Player, DefaultStates: {[string]: any}, Leaders
             self._Janitor:Add(Humanoid.Died:Connect(function()
                 self.CharacterJanitor:Cleanup()
                 DeathSignal:Fire()
+                Player:LoadCharacter()
             end), "Disconnect", "Died")
         else
             assert(Humanoid, `[ENT Framework] Character for {self.Name} was not loaded with a Humanoid.`)
@@ -105,6 +107,13 @@ function PlayerClass:LinkLeaderstat(StateName: string, Convert: (any) -> any, In
     end)
 end
 
+function PlayerClass:IncrementState(StateName: string, Amount: number)
+    local State: Vide.source<number> = self[StateName]
+    assert(State, `[ENT Framework] State {StateName} does not exist in player object.`)
+
+    State(State() + Amount)
+end
+
 function PlayerClass:HasPass(Name: string): boolean
     if not self.Data.OwnedGamepasses[Name] then
         return false
@@ -126,6 +135,9 @@ end
 
 function PlayerClass:Destroy()
     self.Profile:Release()
+    if self.Destructor then
+        self.Destructor()
+    end
 end
 
 return PlayerClass

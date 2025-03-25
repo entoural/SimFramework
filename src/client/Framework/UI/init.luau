@@ -15,6 +15,7 @@ local PlayerGui = Player:WaitForChild("PlayerGui")
 local Utility = require(Shared.Utility)
 local Vide = require(Packages.Vide)
 local Components = script.Components
+local Network = require(script.Parent.Network)
 local PlayerManager = require(script.Parent.PlayerManager)
 local Monetization = require(script.Parent.Monetization)
 local ButtonInteraction = require(Components.ButtonInteraction)
@@ -51,8 +52,9 @@ module.ExistingInteractions = {
     ButtonInteractions = {}
 }
 module.HasBasicButton = {}
-
 module.ComponentDependencies = {}
+
+local StatEffectImages = {}
 
 module.GeneralComponents = {
     SpecificReference = function(Instance: Instance)
@@ -100,6 +102,10 @@ module.GeneralComponents = {
         return Source
     end,
 
+    StatEffect = function(Instance: GuiObject)
+        StatEffectImages[Instance.Parent.Name] = Instance
+    end,
+
     HUDStat = function(Instance: GuiObject)
         local StatName = Instance.Name
         local State = PlayerObject:GetState(StatName, true, true)
@@ -123,11 +129,13 @@ module.GeneralComponents = {
             end
 
             if (Value == nil and LastValue ~= nil) or (Value ~= nil and LastValue ~= nil and Value < LastValue) then
+                LastValue = Value
                 return
             end
 
             LastValue = Value
             Animations.GeneralEffects.Burst(Instance.Icon, 1.5, 1)
+            Animations.GeneralEffects.Burst(Instance, 1.25, 1)
         end)
     end
 }
@@ -161,6 +169,13 @@ module.SpecificComponents = {
         local Interaction = module.GetEmptyButtonInteraction(Instance)
         Interaction.Clicked:Connect(function()
             Monetization.PromptPass(PassName)
+        end)
+    end,
+
+    Shake = function(Instance: Instance, Input: number)
+        Utility.Clock(Input, function()
+            Animations.GeneralEffects.Shake(Instance, 3)
+            Animations.GeneralEffects.Burst(Instance, 1.2)
         end)
     end
 }
@@ -274,6 +289,17 @@ function module.BeginSetup()
         for _, Info in module.Spinning do
             Info.Instance.Rotation += DeltaTime * Info.Speed * 90
         end
+    end)
+
+    local StatEffect = require(script.StatEffect)
+
+    Network.StatEffect.On(function(Data: {Stat: string, Amount: number})
+        local Image = StatEffectImages[Data.Stat]
+        if not Image then
+            error(`[ENT Framework Client] Couldn't find stat "{Data.Stat}"`)
+        end
+
+        StatEffect(Image.Image, Image.AbsolutePosition + (Image.AbsoluteSize / 2), Data.Amount)
     end)
 end
 

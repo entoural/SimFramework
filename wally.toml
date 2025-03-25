@@ -1,5 +1,5 @@
 [package]
-name = "nicho/simframework"
+name = "nicho/rocketgame"
 version = "0.1.0"
 registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
@@ -14,6 +14,7 @@ Janitor = "howmanysmall/janitor@^1.15.7"
 Signal = "call23re/goodsignal@^0.2.2"
 Red = "red-blox/red@2.3.0"
 Spr = "blackjackiee/spr@1.1.3"
+Iris = "michael-48/iris@2.3.1"
 
 [server-dependencies]
 ProfileService = "alreadypro/profileservice@^1.0.4"

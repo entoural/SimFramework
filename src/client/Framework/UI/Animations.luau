@@ -67,6 +67,17 @@ function module.GeneralEffects.Shake(Instance: GuiObject, Speed: number)
     end)
 end
 
+function module.GeneralEffects.SwayLoop(Instance: GuiObject, Speed: number, RotationRange: number)
+    Speed = Speed or 1
+    Instance.Rotation = -(RotationRange or 15)
+    local Goal = {Rotation = RotationRange or 15}
+    local Tween = TweenService:Create(Instance, TweenInfo.new(2 / Speed, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true), Goal)
+
+    Tween:Play()
+
+    return Tween
+end
+
 local BurstTasks = {}
 
 function module.GeneralEffects.Burst(Instance: GuiObject, Multi: number?, BackTo: number?)

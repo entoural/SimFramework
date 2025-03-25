@@ -115,10 +115,34 @@ if not RunService:IsRunning() then
 		PlayerLeft = table.freeze({
 			On = noop
 		}),
+		StatEffect = table.freeze({
+			On = noop
+		}),
 		RequestData = table.freeze({
 			Fire = noop
 		}),
+		ChangeFloors = table.freeze({
+			Fire = noop
+		}),
 		RejoinRound = table.freeze({
+			Fire = noop
+		}),
+		LaunchPlayer = table.freeze({
+			On = noop
+		}),
+		RequestLaunch = table.freeze({
+			Fire = noop
+		}),
+		UpgradeLevel = table.freeze({
+			Fire = noop
+		}),
+		Rebirth = table.freeze({
+			Fire = noop
+		}),
+		BuyNextRocket = table.freeze({
+			Fire = noop
+		}),
+		BuyNextFloor = table.freeze({
 			Fire = noop
 		}),
 		RequestReplication = table.freeze({
@@ -152,13 +176,17 @@ end
 
 RunService.Heartbeat:Connect(SendEvents)
 
-local events = table.create(6)
-local event_queue: { [number]: { any } } = table.create(6)
+local events = table.create(14)
+local event_queue: { [number]: { any } } = table.create(14)
 event_queue[1] = {}
 events[2] = {}
 event_queue[2] = {}
 events[3] = {}
 event_queue[3] = {}
+events[4] = {}
+event_queue[4] = {}
+events[8] = {}
+event_queue[8] = {}
 reliable.OnClientEvent:Connect(function(buff, inst)
 	incoming_buff = buff
 	incoming_inst = inst
@@ -181,52 +209,38 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 			value.Value = {}
 			local enum_value_1 = buffer.readu8(incoming_buff, read(1))
 			if enum_value_1 == 0 then
-				value.Value.Type = "Wins"
+				value.Value.Type = "Rebirths"
 				value.Value.Value = buffer.readu32(incoming_buff, read(4))
 			elseif enum_value_1 == 1 then
 				value.Value.Type = "Cash"
 				value.Value.Value = buffer.readu32(incoming_buff, read(4))
 			elseif enum_value_1 == 2 then
-				value.Value.Type = "PlayedRound"
-				value.Value.Value = buffer.readu8(incoming_buff, read(1)) == 1
+				value.Value.Type = "Boost"
+				value.Value.Value = buffer.readu32(incoming_buff, read(4))
 			elseif enum_value_1 == 3 then
-				value.Value.Type = "RoundState"
-				value.Value.Value = {}
-				local len_3 = buffer.readu16(incoming_buff, read(2))
-				value.Value.Value.State = buffer.readstring(incoming_buff, read(len_3), len_3)
-				if buffer.readu8(incoming_buff, read(1)) == 1 then
-					value.Value.Value.Num1 = buffer.readu16(incoming_buff, read(2))
-				else
-					value.Value.Value.Num1 = nil
-				end
-				if buffer.readu8(incoming_buff, read(1)) == 1 then
-					value.Value.Value.Num2 = buffer.readu16(incoming_buff, read(2))
-				else
-					value.Value.Value.Num2 = nil
-				end
+				value.Value.Type = "RecordScore"
+				value.Value.Value = buffer.readu32(incoming_buff, read(4))
 			elseif enum_value_1 == 4 then
-				value.Value.Type = "Winners"
-				value.Value.Value = {}
-				local len_4 = buffer.readu16(incoming_buff, read(2))
-				for i_1 = 1, len_4 do
-					local val_1
-					local len_5 = buffer.readu16(incoming_buff, read(2))
-					val_1 = buffer.readstring(incoming_buff, read(len_5), len_5)
-					value.Value.Value[i_1] = val_1
-				end
+				value.Value.Type = "Floors"
+				value.Value.Value = buffer.readu16(incoming_buff, read(2))
 			elseif enum_value_1 == 5 then
-				value.Value.Type = "ShowingTiles"
-				value.Value.Value = {}
-				local len_6 = buffer.readu16(incoming_buff, read(2))
-				for i_2 = 1, len_6 do
-					local val_2
-					incoming_ipos = incoming_ipos + 1
-					val_2 = incoming_inst[incoming_ipos]
-					assert(val_2 ~= nil)
-					value.Value.Value[i_2] = val_2
-				end
+				value.Value.Type = "RocketLevel"
+				value.Value.Value = buffer.readu8(incoming_buff, read(1))
 			elseif enum_value_1 == 6 then
-				value.Value.Type = "InRound"
+				value.Value.Type = "Rocket"
+				local len_3 = buffer.readu16(incoming_buff, read(2))
+				value.Value.Value = buffer.readstring(incoming_buff, read(len_3), len_3)
+			elseif enum_value_1 == 7 then
+				value.Value.Type = "BuildingModel"
+				if buffer.readu8(incoming_buff, read(1)) == 1 then
+					incoming_ipos = incoming_ipos + 1
+					value.Value.Value = incoming_inst[incoming_ipos]
+					assert(value.Value.Value == nil or value.Value.Value:IsA("Model"))
+				else
+					value.Value.Value = nil
+				end
+			elseif enum_value_1 == 8 then
+				value.Value.Type = "InLaunch"
 				value.Value.Value = buffer.readu8(incoming_buff, read(1)) == 1
 			else
 				error("Invalid variant")
@@ -279,6 +293,41 @@ reliable.OnClientEvent:Connect(function(buff, inst)
 					warn(`[ZAP] {#event_queue[3]} events in queue for PlayerLeft. Did you forget to attach a listener?`)
 				end
 			end
+		elseif id == 4 then
+			local value
+			value = {}
+			local len_1 = buffer.readu16(incoming_buff, read(2))
+			value.Stat = buffer.readstring(incoming_buff, read(len_1), len_1)
+			value.Amount = buffer.readu8(incoming_buff, read(1))
+			if events[4][1] then
+				for _, cb in events[4] do
+					task.spawn(cb, value)
+				end
+			else
+				table.insert(event_queue[4], value)
+				if #event_queue[4] > 64 then
+					warn(`[ZAP] {#event_queue[4]} events in queue for StatEffect. Did you forget to attach a listener?`)
+				end
+			end
+		elseif id == 8 then
+			local value
+			value = {}
+			value.LaunchData = {}
+			value.LaunchData.MaxHeightIncrease = buffer.readf32(incoming_buff, read(4))
+			value.LaunchData.Gravity = buffer.readf32(incoming_buff, read(4))
+			value.LaunchData.HorizontalSpeed = buffer.readf32(incoming_buff, read(4))
+			value.LaunchData.SpeedMultiplier = buffer.readf32(incoming_buff, read(4))
+			value.Accuracy = buffer.readf32(incoming_buff, read(4))
+			if events[8][1] then
+				for _, cb in events[8] do
+					task.spawn(cb, value)
+				end
+			else
+				table.insert(event_queue[8], value)
+				if #event_queue[8] > 64 then
+					warn(`[ZAP] {#event_queue[8]} events in queue for LaunchPlayer. Did you forget to attach a listener?`)
+				end
+			end
 		else
 			error("Unknown event id")
 		end
@@ -289,19 +338,60 @@ local returns = table.freeze({
 	RequestData = table.freeze({
 		Fire = function()
 			alloc(1)
-			buffer.writeu8(outgoing_buff, outgoing_apos, 4)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+		end,
+	}),
+	ChangeFloors = table.freeze({
+		Fire = function(Value: (number))
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+			alloc(2)
+			buffer.writeu16(outgoing_buff, outgoing_apos, Value)
 		end,
 	}),
 	RejoinRound = table.freeze({
 		Fire = function()
 			alloc(1)
-			buffer.writeu8(outgoing_buff, outgoing_apos, 5)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 7)
+		end,
+	}),
+	RequestLaunch = table.freeze({
+		Fire = function(Value: (number))
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 9)
+			assert(Value <= 1)
+			alloc(4)
+			buffer.writef32(outgoing_buff, outgoing_apos, Value)
+		end,
+	}),
+	UpgradeLevel = table.freeze({
+		Fire = function()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 10)
+		end,
+	}),
+	Rebirth = table.freeze({
+		Fire = function()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 11)
+		end,
+	}),
+	BuyNextRocket = table.freeze({
+		Fire = function()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 12)
+		end,
+	}),
+	BuyNextFloor = table.freeze({
+		Fire = function()
+			alloc(1)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 13)
 		end,
 	}),
 	RequestReplication = table.freeze({
 		Fire = function()
 			alloc(1)
-			buffer.writeu8(outgoing_buff, outgoing_apos, 6)
+			buffer.writeu8(outgoing_buff, outgoing_apos, 14)
 		end,
 	}),
 	PlayerStateUpdate = table.freeze({
@@ -309,29 +399,31 @@ local returns = table.freeze({
 			Player: ((string)?),
 			Index: (string),
 			Value: ({
-				Type: "Wins",
+				Type: "Rebirths",
 				Value: (number),
 			} | {
 				Type: "Cash",
 				Value: (number),
 			} | {
-				Type: "PlayedRound",
-				Value: (boolean),
+				Type: "Boost",
+				Value: (number),
 			} | {
-				Type: "RoundState",
-				Value: ({
-					State: (string),
-					Num1: ((number)?),
-					Num2: ((number)?),
-				}),
+				Type: "RecordScore",
+				Value: (number),
 			} | {
-				Type: "Winners",
-				Value: ({ (string) }),
+				Type: "Floors",
+				Value: (number),
 			} | {
-				Type: "ShowingTiles",
-				Value: ({ (Instance) }),
+				Type: "RocketLevel",
+				Value: (number),
 			} | {
-				Type: "InRound",
+				Type: "Rocket",
+				Value: (string),
+			} | {
+				Type: "BuildingModel",
+				Value: ((Model)?),
+			} | {
+				Type: "InLaunch",
 				Value: (boolean),
 			}),
 		})) -> ()): () -> ()
@@ -373,6 +465,41 @@ local returns = table.freeze({
 			event_queue[3] = {}
 			return function()
 				table.remove(events[3], table.find(events[3], Callback))
+			end
+		end,
+	}),
+	StatEffect = table.freeze({
+		On = function(Callback: (({
+			Stat: (string),
+			Amount: (number),
+		})) -> ())
+			table.insert(events[4], Callback)
+			for _, value in event_queue[4] do
+				task.spawn(Callback, value)
+			end
+			event_queue[4] = {}
+			return function()
+				table.remove(events[4], table.find(events[4], Callback))
+			end
+		end,
+	}),
+	LaunchPlayer = table.freeze({
+		On = function(Callback: (({
+			LaunchData: ({
+				MaxHeightIncrease: (number),
+				Gravity: (number),
+				HorizontalSpeed: (number),
+				SpeedMultiplier: (number),
+			}),
+			Accuracy: (number),
+		})) -> ())
+			table.insert(events[8], Callback)
+			for _, value in event_queue[8] do
+				task.spawn(Callback, value)
+			end
+			event_queue[8] = {}
+			return function()
+				table.remove(events[8], table.find(events[8], Callback))
 			end
 		end,
 	}),

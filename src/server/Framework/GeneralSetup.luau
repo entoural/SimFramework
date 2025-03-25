@@ -51,8 +51,6 @@ function module:ReplicateStates(DataStates)
     end
 end
 
-
-
 function module:LoadDataStates(DataStates)
     for _, DataState in DataStates do
         self:CreateDataState(table.unpack(DataState))

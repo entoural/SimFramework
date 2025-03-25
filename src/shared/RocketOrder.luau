@@ -1,0 +1,4 @@
+return {
+    "Beginner",
+    "Next"
+}
